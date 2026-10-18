@@ -1,0 +1,80 @@
+name: Backend checks
+
+# Runs on every pull request that touches the backend, and is called by the
+# Pipeline workflow on every push to main, so the same checks gate both.
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - "scripts/dev/**"
+      - "compose.dev.yml"
+      - ".github/workflows/backend.yml"
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Lint, type-check and test backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        # Same digest-pinned image as compose.dev.yml, so CI matches local development.
+        image: postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
+        env:
+          POSTGRES_USER: roombook
+          POSTGRES_PASSWORD: roombook
+          POSTGRES_DB: roombook_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U roombook -d roombook_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      ROOMBOOK_TEST_DATABASE_URL: postgresql+psycopg://roombook:roombook@127.0.0.1:5432/roombook_test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          working-directory: backend
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Lint
+        run: uv run --locked ruff check .
+      - name: Check formatting
+        run: uv run --locked ruff format --check .
+      - name: Check types
+        run: uv run --locked mypy
+      - name: Test against PostgreSQL
+        run: >-
+          uv run --locked pytest
+          --cov=app --cov-report=term-missing --cov-report=xml
+          --junitxml=junit.xml
+      - name: Check migrations match the models
+        env:
+          ROOMBOOK_DATABASE_URL: ${{ env.ROOMBOOK_TEST_DATABASE_URL }}
+        run: |
+          uv run --locked alembic upgrade head
+          uv run --locked alembic check
+      - name: Check the committed OpenAPI export
+        run: uv run --locked python scripts/export_openapi.py --check
+      - name: Keep test and coverage reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: backend-test-reports
+          path: |
+            backend/junit.xml
+            backend/coverage.xml
+          if-no-files-found: ignore
+          retention-days: 14

@@ -1,0 +1,237 @@
+name: Candidate pipeline
+
+# Push to main (or run manually):
+#   1. backend and frontend checks (the same workflows that gate pull requests)
+#   2. build ONE application image on GitHub-hosted CI, smoke-test it, scan it
+#      for bundled secrets, publish it to GHCR as sha-<7 chars>, record the digest
+#   3. test that exact digest against a disposable PostgreSQL (Testing)
+# Staging and Production deployment attach after test-candidate (see docs/ci/pipeline.md).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  backend-checks:
+    name: Backend checks
+    uses: ./.github/workflows/backend.yml
+
+  frontend-checks:
+    name: Frontend checks
+    uses: ./.github/workflows/frontend.yml
+
+  build:
+    name: Build, verify and publish image
+    needs: [backend-checks, frontend-checks]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+      digest: ${{ steps.publish.outputs.digest }}
+      ref: ${{ steps.publish.outputs.ref }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Name the image
+        id: meta
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"        # GHCR names must be lowercase
+          {
+            echo "repo=ghcr.io/${owner}/roombook"
+            echo "image=ghcr.io/${owner}/roombook:sha-${GITHUB_SHA::7}"
+            echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build the image once
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          CREATED: ${{ steps.meta.outputs.created }}
+        run: |
+          start=$(date +%s)
+          docker build . \
+            --platform linux/amd64 \
+            --build-arg COMMIT_SHA="$GITHUB_SHA" \
+            --label org.opencontainers.image.source="https://github.com/$GITHUB_REPOSITORY" \
+            --label org.opencontainers.image.revision="$GITHUB_SHA" \
+            --label org.opencontainers.image.created="$CREATED" \
+            --tag "$IMAGE"
+          echo "BUILD_SECONDS=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
+
+      - name: Smoke-test routing and runtime identity
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+        run: |
+          docker run -d --name candidate -p 127.0.0.1:8000:8000 \
+            -e ROOMBOOK_ENVIRONMENT=ci "$IMAGE"
+          for _ in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8000/health >/dev/null 2>&1 && break
+            sleep 1
+          done
+          set -x
+          curl -fsS http://127.0.0.1:8000/health | jq -e '.status == "healthy"'
+          curl -fsS http://127.0.0.1:8000/version | jq -e --arg sha "$GITHUB_SHA" '.commit_sha == $sha'
+          curl -fsS http://127.0.0.1:8000/ | grep -q 'id="root"'
+          curl -fsS http://127.0.0.1:8000/rooms | grep -q 'id="root"'     # client route gets the app
+          code=$(curl -s -o api404.json -w '%{http_code}' http://127.0.0.1:8000/api/v1/no-such-route)
+          test "$code" = 404 && jq -e '.error.code == "NOT_FOUND"' api404.json   # API wins over the SPA
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/ready)
+          test "$code" = 503                                                # no database here, as expected
+
+      - name: Check the image for bundled secrets
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+        run: |
+          found=$(docker run --rm --entrypoint sh "$IMAGE" -c \
+            'find /app /home -xdev \( -name ".env" -o -name ".env.*" -o -name "id_rsa*" -o -name "*.key" \) 2>/dev/null;
+             grep -rlE "postgres(ql)?(\+psycopg)?://[^:/]+:[^@]+@" /app/static 2>/dev/null || true')
+          if [ -n "$found" ]; then echo "::error::Possible secrets in image:"; echo "$found"; exit 1; fi
+          echo "No .env files, private keys or database credentials found in the image."
+
+      - name: Publish to GHCR
+        id: publish
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+          IMAGE: ${{ steps.meta.outputs.image }}
+          REPO: ${{ steps.meta.outputs.repo }}
+        run: |
+          echo "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+          docker push "$IMAGE"
+          digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE")
+          digest="${digest#*@}"
+          echo "digest=${digest}"        >> "$GITHUB_OUTPUT"
+          echo "ref=${REPO}@${digest}"   >> "$GITHUB_OUTPUT"
+          docker logout ghcr.io
+
+      - name: Write the candidate manifest
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          REF: ${{ steps.publish.outputs.ref }}
+          CREATED: ${{ steps.meta.outputs.created }}
+        run: |
+          mkdir -p candidate
+          jq -n \
+            --arg commit "$GITHUB_SHA" --arg image "$IMAGE" --arg ref "$REF" \
+            --arg built "$CREATED" --arg build_seconds "$BUILD_SECONDS" \
+            --arg run "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            '{commit: $commit, image: $image, ref: $ref, built: $built,
+              build_seconds: ($build_seconds | tonumber), run: $run, promotable: false}' \
+            > candidate/candidate.json
+          cat candidate/candidate.json
+          {
+            echo "### Candidate image"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Commit | \`$GITHUB_SHA\` |"
+            echo "| Image | \`$IMAGE\` |"
+            echo "| Pinned reference | \`$REF\` |"
+            echo "| Build time | ${BUILD_SECONDS} s |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the candidate manifest
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: candidate-manifest
+          path: candidate/candidate.json
+          retention-days: 30
+
+      - name: Keep container logs
+        if: always()
+        run: docker logs candidate > candidate-ci.log 2>&1 || true
+
+      - name: Upload container logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: candidate-ci-logs
+          path: candidate-ci.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+  test-candidate:
+    name: Test the exact image (Testing)
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+    services:
+      postgres:
+        image: postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
+        env:
+          POSTGRES_USER: roombook
+          POSTGRES_PASSWORD: roombook
+          POSTGRES_DB: roombook_candidate
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U roombook -d roombook_candidate"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      REF: ${{ needs.build.outputs.ref }}
+      DB: postgresql+psycopg://roombook:roombook@127.0.0.1:5432/roombook_candidate
+    steps:
+      - name: Pull the candidate by digest
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          echo "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+          docker pull "$REF"
+          docker logout ghcr.io
+
+      - name: Migrate and seed with the image's own tools
+        run: |
+          docker run --rm --network host -e ROOMBOOK_DATABASE_URL="$DB" "$REF" alembic upgrade head
+          docker run --rm --network host -e ROOMBOOK_DATABASE_URL="$DB" "$REF" python -m scripts.seed_rooms
+
+      - name: Start the candidate
+        run: |
+          docker run -d --name candidate --network host \
+            -e ROOMBOOK_DATABASE_URL="$DB" -e ROOMBOOK_ENVIRONMENT=testing "$REF"
+          for _ in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8000/ready >/dev/null 2>&1 && break
+            sleep 1
+          done
+
+      - name: Verify database connection, rooms and identity
+        run: |
+          set -x
+          curl -fsS http://127.0.0.1:8000/ready | jq -e '.status == "ready"'
+          curl -fsS http://127.0.0.1:8000/version \
+            | jq -e --arg sha "$GITHUB_SHA" '.commit_sha == $sha and .environment == "testing"'
+          curl -fsS http://127.0.0.1:8000/api/v1/rooms | jq -e '.total >= 2'
+          curl -fsS "http://127.0.0.1:8000/api/v1/rooms?starts_at=2030-01-07T02%3A00%3A00Z&ends_at=2030-01-07T03%3A00%3A00Z" \
+            | jq -e '[.items[].available] | all(type == "boolean")'
+          curl -fsS http://127.0.0.1:8000/ | grep -q 'id="root"'
+
+      # Daniel's Playwright journeys (tests/e2e) run here against http://127.0.0.1:8000.
+
+      - name: Keep candidate logs
+        if: always()
+        run: docker logs candidate > candidate-testing.log 2>&1 || true
+
+      - name: Upload candidate logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: candidate-testing-logs
+          path: candidate-testing.log
+          if-no-files-found: ignore
+          retention-days: 14

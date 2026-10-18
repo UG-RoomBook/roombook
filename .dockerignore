@@ -1,0 +1,23 @@
+# Only frontend/ and backend/ are used by the Dockerfile; keep the context small
+.git/
+.github/
+docs/
+scripts/
+**/node_modules/
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+frontend/dist/
+frontend/coverage/
+frontend/.vite/
+**/*.tsbuildinfo
+backend/htmlcov/
+backend/coverage.xml
+backend/junit.xml
+backend/tests/
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
