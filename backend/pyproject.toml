@@ -1,0 +1,53 @@
+[project]
+name = "roombook-backend"
+version = "0.1.0"
+description = "RoomBook API"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "alembic==1.20.0",
+  "fastapi==0.143.3",
+  "psycopg[binary]==3.3.6",
+  "pydantic-settings==2.16.0",
+  "sqlalchemy==2.1.5",
+  "uvicorn==0.54.0",
+]
+
+[dependency-groups]
+dev = [
+  "httpx==0.28.1",
+  "mypy==2.4.0",
+  "pytest==9.1.1",
+  "pytest-cov==7.1.0",
+  "ruff==0.17.1",
+]
+
+[tool.uv]
+package = false
+required-version = "==0.13.1"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["app", "scripts", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = ["database: requires a migrated isolated PostgreSQL test database"]
+
+[tool.coverage.run]
+branch = true
+source = ["app"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 80

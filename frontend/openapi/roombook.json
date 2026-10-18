@@ -3,7 +3,7 @@
   "info": {
     "title": "RoomBook frontend development contract",
     "version": "0.1.0",
-    "description": "Provisional frontend contract transcribed from the accepted wiki. This file is not exported from a running FastAPI implementation. Daniel must reconcile pagination and schemas with the backend OpenAPI before real integration is accepted."
+    "description": "Provisional frontend contract transcribed from the accepted wiki. This file is not exported from a running FastAPI implementation. Saad owns backend implementation and contract reconciliation; Daniel owns independent integration and acceptance testing."
   },
   "x-contract-status": "frontend-development-draft",
   "paths": {
