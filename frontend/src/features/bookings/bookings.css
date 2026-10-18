@@ -1,0 +1,49 @@
+#rb-swinburne .sw-booking-filter {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+#rb-swinburne .sw-booking-filter label {
+  flex: 1 1 180px;
+  max-width: 260px;
+}
+
+#rb-swinburne .sw-booking-filter input {
+  min-height: 42px;
+}
+
+#rb-swinburne .sw-booking-filter .sw-error {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+#rb-swinburne .sw-booking-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+#rb-swinburne .sw-booking-feedback {
+  flex-basis: 100%;
+}
+
+#rb-swinburne .sw-booking h3 {
+  overflow-wrap: anywhere;
+}
+
+#rb-swinburne .sw-booking h3:focus-visible {
+  outline: 3px solid var(--red);
+  outline-offset: 4px;
+}
+
+@media (max-width: 520px) {
+  #rb-swinburne .sw-booking-filter label {
+    max-width: none;
+  }
+}

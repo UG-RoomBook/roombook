@@ -1,0 +1,146 @@
+@import '@fontsource/dm-sans/400.css';
+@import '@fontsource/dm-sans/500.css';
+@import '@fontsource/dm-sans/600.css';
+@import '@fontsource/dm-sans/700.css';
+@import '@fontsource/space-grotesk/400.css';
+@import '@fontsource/space-grotesk/500.css';
+@import '@fontsource/space-grotesk/600.css';
+@import '@fontsource/space-grotesk/700.css';
+@import 'tailwindcss/theme' layer(theme);
+@import 'tailwindcss/utilities' layer(utilities);
+@import './approved.css';
+@import '../shared/illustrations/room-illustration.css';
+
+@theme inline {
+  --font-sans: 'DM Sans', sans-serif;
+  --font-heading: 'Space Grotesk', sans-serif;
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--red-fill);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--soft);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--soft);
+  --color-muted-foreground: var(--sub);
+  --color-accent: var(--red-tint);
+  --color-accent-foreground: var(--red);
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--red);
+  --radius-control: 7px;
+}
+
+html {
+  background: light-dark(#ffffff, #181818);
+  scroll-padding-top: 20px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+#root {
+  width: 100%;
+}
+
+#rb-swinburne a {
+  color: inherit;
+  text-decoration: none;
+}
+
+#rb-swinburne .sw-nav a {
+  cursor: pointer;
+}
+
+#rb-swinburne a:focus-visible,
+#rb-swinburne [tabindex]:focus-visible {
+  outline: 3px solid var(--red);
+  outline-offset: 4px;
+}
+
+#rb-swinburne button {
+  cursor: pointer;
+}
+
+#rb-swinburne .sw-stage > * {
+  min-width: 0;
+  min-height: 655px;
+  animation: sw-enter 240ms ease;
+}
+
+#rb-swinburne .sw-room,
+#rb-swinburne .sw-review-layout > * {
+  min-width: 0;
+}
+
+#rb-swinburne .sw-visual {
+  width: 100%;
+  max-width: 100%;
+}
+
+#rb-swinburne .sw-skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  background: var(--surface);
+  padding: 10px 15px;
+  border-radius: 7px;
+  transform: translateY(-150%);
+}
+
+#rb-swinburne .sw-skip-link:focus {
+  transform: translateY(0);
+}
+
+#rb-swinburne .sw-state {
+  padding: 32px 20px;
+}
+
+#rb-swinburne .sw-state h2 {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+#rb-swinburne .sw-state .sw-btn {
+  margin-top: 16px;
+}
+
+@media (max-width: 760px) {
+  #rb-swinburne .sw-sidebar {
+    padding-bottom: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  #rb-swinburne .sw-stage > * {
+    min-height: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #rb-swinburne *,
+  #rb-swinburne *::before,
+  #rb-swinburne *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  #rb-swinburne .sw-room:hover,
+  #rb-swinburne .sw-room:focus-within,
+  #rb-swinburne .sw-btn:hover,
+  #rb-swinburne .sw-btn:active,
+  #rb-swinburne .sw-nav a:hover {
+    transform: none !important;
+  }
+
+  #rb-swinburne .sw-ripple {
+    display: none;
+  }
+}
