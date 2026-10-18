@@ -55,6 +55,8 @@ docker rm -f roombook-rb10-validation
 
 Keep generated `foundation.yaml` outside Git. Results and limitations are in the [RB-10 verification record](../../docs/operations/RB-10-verification.md).
 
+For initial verification on the installed host, use `sudo python3 scripts/hosting/verify-foundation.py --on-empty-host` from a reviewed source checkout. This mode requires root, the expected K3s node and four empty RoomBook namespaces. It creates temporary probes and narrowly scoped allow policies, then removes them. It refuses to run once runtime pods exist; use the assigned acceptance tests at that point.
+
 ## Follow-up work
 
 - Prattay, RB-20/RB-21/RB-22/RB-23/RB-26: manifest checks, GitHub-hosted candidate tests, one image, restricted deployment commands and digest promotion.

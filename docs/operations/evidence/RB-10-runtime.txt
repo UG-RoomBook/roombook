@@ -1,0 +1,88 @@
+NAME           STATUS   ROLES           AGE     VERSION        INTERNAL-IP      EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION              CONTAINER-RUNTIME
+roombook-vps   Ready    control-plane   4m30s   v1.37.1+k3s1   154.26.157.138   <none>        Ubuntu 24.04.5 LTS   6.8.0-139-generic (amd64)   containerd://2.3.4-k3s1
+NAME                  STATUS   AGE
+roombook-edge         Active   4m30s
+roombook-monitoring   Active   4m30s
+roombook-prod         Active   4m30s
+roombook-staging      Active   4m30s
+NAMESPACE             NAME             REQUEST                                          LIMIT                                          AGE
+roombook-edge         runtime-budget   requests.cpu: 0/100m, requests.memory: 0/64Mi    limits.cpu: 0/250m, limits.memory: 0/128Mi     4m30s
+roombook-monitoring   runtime-budget   requests.cpu: 0/500m, requests.memory: 0/512Mi   limits.cpu: 0/500m, limits.memory: 0/896Mi     4m30s
+roombook-prod         runtime-budget   requests.cpu: 0/1, requests.memory: 0/768Mi      limits.cpu: 0/1500m, limits.memory: 0/1280Mi   4m30s
+roombook-staging      runtime-budget   requests.cpu: 0/500m, requests.memory: 0/512Mi   limits.cpu: 0/500m, limits.memory: 0/1Gi       4m30s
+NAMESPACE             NAME           POD-SELECTOR   AGE
+roombook-edge         default-deny   <none>         4m29s
+roombook-edge         dns            <none>         4m29s
+roombook-monitoring   default-deny   <none>         4m29s
+roombook-monitoring   dns            <none>         4m29s
+roombook-prod         default-deny   <none>         4m29s
+roombook-prod         dns            <none>         4m29s
+roombook-staging      default-deny   <none>         4m29s
+roombook-staging      dns            <none>         4m29s
+NAMESPACE     NAME                                 READY   STATUS      RESTARTS   AGE
+kube-system   coredns-577d995dff-qdrjb             1/1     Running     0          4m25s
+kube-system   helm-install-gateway-api-crd-nkk5n   0/1     Completed   0          4m26s
+kube-system   metrics-server-778c4649b4-wnnpn      1/1     Running     0          4m25s
+NAMESPACE     NAME             TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                  AGE
+default       kubernetes       ClusterIP   10.43.0.1       <none>        443/TCP                  4m32s
+kube-system   kube-dns         ClusterIP   10.43.0.10      <none>        53/UDP,53/TCP,9153/TCP   4m30s
+kube-system   metrics-server   ClusterIP   10.43.167.167   <none>        443/TCP                  4m29s
+Encryption Status: Enabled
+Current Rotation Stage: start
+Server Encryption Hashes: All hashes match
+
+Active  Key Type  Name
+------  --------  ----
+ *      AES-CBC   aescbckey
+
+root:root:600
+root:root:700
+root:root:700
+root:root:700
+root:root:700
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), deny (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW IN    Anywhere                  
+80/tcp                     ALLOW IN    Anywhere                  
+443/tcp                    ALLOW IN    Anywhere                  
+Anywhere                   ALLOW IN    10.42.0.0/16              
+Anywhere                   ALLOW IN    10.43.0.0/16              
+22/tcp (v6)                ALLOW IN    Anywhere (v6)             
+80/tcp (v6)                ALLOW IN    Anywhere (v6)             
+443/tcp (v6)               ALLOW IN    Anywhere (v6)             
+
+Anywhere                   ALLOW FWD   10.42.0.0/16              
+80/tcp                     ALLOW FWD   Anywhere                  
+443/tcp                    ALLOW FWD   Anywhere                  
+80/tcp (v6)                ALLOW FWD   Anywhere (v6)             
+443/tcp (v6)               ALLOW FWD   Anywhere (v6)             
+
+active
+active
+enabled
+Docker version 29.9.1, build dfc520d
+               total        used        free      shared  buff/cache   available
+Mem:           5.8Gi       1.1Gi       3.7Gi       1.5Mi       1.3Gi       4.7Gi
+Swap:             0B          0B          0B
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1       387G  3.6G  383G   1% /
+State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess
+LISTEN 0      4096         0.0.0.0:22         0.0.0.0:*          
+LISTEN 0      4096   127.0.0.53%lo:53         0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:6444       0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:10259      0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:10258      0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:10257      0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:10256      0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:10249      0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:10248      0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:10010      0.0.0.0:*          
+LISTEN 0      4096      127.0.0.54:53         0.0.0.0:*          
+LISTEN 0      4096            [::]:22            [::]:*          
+LISTEN 0      4096               *:6443             *:*          
+LISTEN 0      4096               *:10250            *:*          

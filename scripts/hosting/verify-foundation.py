@@ -1,7 +1,8 @@
-"""Check RB-10 controls in a disposable local K3s Docker container only."""
+"""Check RB-10 controls locally or on the empty RoomBook host foundation."""
 
 import argparse
 import json
+import os
 import subprocess
 
 IMAGE = "busybox:1.37.0@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e"
@@ -11,18 +12,34 @@ LABEL = {"roombook.test": "rb10"}
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--container", default="roombook-rb10-validation")
+    parser.add_argument("--on-empty-host", action="store_true")
     args = parser.parse_args()
-    if not args.container.startswith("roombook-rb10-validation"):
+    if not args.on_empty_host and not args.container.startswith(
+        "roombook-rb10-validation"
+    ):
         parser.error("Use a named disposable RB-10 validation container.")
+    if args.on_empty_host and (os.name != "posix" or os.geteuid() != 0):
+        parser.error(
+            "Host verification requires root on the installed RoomBook server."
+        )
+    prefix = (
+        ["/usr/local/bin/kubectl"]
+        if args.on_empty_host
+        else ["docker", "exec", "-i", args.container, "kubectl"]
+    )
+    environment = os.environ.copy()
+    if args.on_empty_host:
+        environment["KUBECONFIG"] = "/etc/rancher/k3s/k3s.yaml"
 
     def kubectl(*command, payload=None, required=True):
         result = subprocess.run(
-            ["docker", "exec", "-i", args.container, "kubectl", *command],
+            [*prefix, *command],
             check=False,
             input=json.dumps(payload) if payload is not None else None,
             capture_output=True,
             text=True,
             timeout=180,
+            env=environment,
         )
         if required and result.returncode:
             raise RuntimeError(result.stdout + result.stderr)
@@ -75,6 +92,16 @@ def main():
         "roombook-monitoring",
         "roombook-edge",
     ]
+    if args.on_empty_host:
+        node = json.loads(kubectl("get", "node", "roombook-vps", "-o", "json").stdout)
+        if node["metadata"]["name"] != "roombook-vps":
+            parser.error("Unexpected host node.")
+        for ns in namespaces:
+            pods = json.loads(kubectl("get", "pods", "-n", ns, "-o", "json").stdout)
+            if pods["items"]:
+                parser.error(
+                    f"{ns} is not empty; use workload acceptance tests instead."
+                )
     results = []
     for ns in namespaces:
         sa = json.loads(kubectl("get", "sa", "default", "-n", ns, "-o", "json").stdout)
@@ -191,13 +218,15 @@ def main():
         )
         results.append("PASS Staging memory quota rejects an over-budget pod")
         encryption = subprocess.run(
-            ["docker", "exec", args.container, "k3s", "secrets-encrypt", "status"],
+            ["/usr/local/bin/k3s", "secrets-encrypt", "status"]
+            if args.on_empty_host
+            else ["docker", "exec", args.container, "k3s", "secrets-encrypt", "status"],
             capture_output=True,
             text=True,
             check=True,
         )
         assert "Encryption Status: Enabled" in encryption.stdout
-        results.append("PASS K3s secrets encryption enabled in the disposable cluster")
+        results.append("PASS K3s secrets encryption enabled")
         print("\n".join(results))
     finally:
         for ns in namespaces:

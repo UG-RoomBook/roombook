@@ -24,14 +24,33 @@ Run `python scripts/hosting/verify-foundation.py` against the named disposable c
 - Production rejects a privileged pod; Staging rejects a pod exceeding its memory quota.
 - K3s reports secrets encryption enabled.
 
-Probe pods and temporary allow policies are removed after the check. The check intentionally accepts only a Docker container name starting with `roombook-rb10-validation`; it does not target the VPS.
+Probe pods and temporary allow policies are removed after the check. The default target is a Docker container name starting with `roombook-rb10-validation`. The explicit `--on-empty-host` mode uses the host's root-only K3s configuration, requires the expected node and refuses to run when any RoomBook namespace contains pods. Use it only before runtime workloads are installed.
 
 Both shell scripts pass `bash -n`. Release binary and installer checksums were obtained from the official K3s release/source and are checked again by bootstrap before installation. Bootstrap refuses a differing existing K3s binary or configuration.
 
+## VPS verification
+
+Saad's named administrator access and sudo were verified. The pinned foundation was installed on 18 October 2026 from application commit `6b18cd0c7347fb7156cccf1161415adb26d0bfc1`. The exported archive SHA-256 was `3850fdad7825d8eeaf95fcb1d2b022ef42d93d73444787864b25082ae7e15277`; bootstrap verified the K3s binary and installer checksums before installation.
+
+| Check | Observed result |
+| --- | --- |
+| Server | `roombook-vps` Ready; K3s v1.37.1+k3s1, bundled containerd 2.3.4-k3s1; service enabled |
+| Boundaries | Four active namespaces, expected quotas/default-deny policies, root-only separate storage directories |
+| Live probe | All eleven checks passed on the empty host foundation, including DNS, isolation, token absence, pod security, quotas and encryption status |
+| Public access | SSH connected over IPv4 and IPv6. TCP 80/443 connected with temporary static listeners, which were then removed |
+| Private ports | External probes to 6443, 10250, 5432, 9090, 3000 and representative NodePort 30080 timed out on both address families; no NodePort Services exist |
+| Credentials | Kubeconfig root-owned mode 0600; no API tokens in test pods; inspection key remains restricted |
+| Existing services | Docker 29.9.1 still active, with no Docker containers listed; SSH login settings unchanged |
+| Idle capacity | About 1.1 GiB RAM used, 4.7 GiB available and 383G root disk free after verification; no load-capacity claim |
+
+Raw evidence: [bootstrap](evidence/RB-10-bootstrap.txt), [host checks](evidence/RB-10-host-checks.txt), [external TCP probes](evidence/RB-10-external-ports.json), [final runtime inventory](evidence/RB-10-runtime.txt).
+
+The temporary listeners proved TCP reachability only. No TLS certificate or Caddy workload was used. Test pods, their allow policies and the temporary listeners were removed; all RoomBook namespaces are empty after verification.
+
 ## Remaining verification
 
-The local cluster uses Docker Desktop on Windows. It does not prove Ubuntu systemd/UFW behaviour, public IPv4/IPv6 filtering, VPS capacity, certificates, provider access, off-server backups or Production readiness. The VPS inspection key cannot execute administrative commands.
+RB-10 is ready for Bhathiya's inventory verification and Prattay's independent review. Provider region, console recovery and remaining account/secret/alert inventory still need owner confirmation. Root/password SSH stays enabled until recovery access is verified. Deployment credentials and namespace-scoped operator access belong to the subsequent access/runtime tickets.
 
-After named administrator access is established, bootstrap can install the pinned server and namespace foundation. RB-10 remains In Progress until host access, actual installation and independent inventory/review evidence are recorded. Runtime workloads, TLS, deployment restrictions, monitoring and recovery remain in their assigned tickets.
+Application/database workloads, TLS and Staging authentication, the candidate pipeline, monitoring, encrypted backup jobs, restore exercises and shared-host load qualification remain in their assigned tickets. The application is not deployed and Production is not qualified.
 
 No application API, business schema, approved design archive, GitHub subscription or repository permission changes are included.

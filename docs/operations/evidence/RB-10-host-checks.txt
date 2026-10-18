@@ -1,0 +1,11 @@
+PASS roombook-prod: default service-account token automount disabled
+PASS roombook-staging: default service-account token automount disabled
+PASS roombook-monitoring: default service-account token automount disabled
+PASS roombook-edge: default service-account token automount disabled
+PASS cluster DNS resolves under default-deny
+PASS test pod has no Kubernetes API token
+PASS Staging to Production HTTP blocked by default
+PASS explicit permissions at both ends enable the control request
+PASS restricted pod security rejects privileged Production pod
+PASS Staging memory quota rejects an over-budget pod
+PASS K3s secrets encryption enabled

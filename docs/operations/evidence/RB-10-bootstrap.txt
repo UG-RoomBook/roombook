@@ -1,0 +1,96 @@
+/home/saad/roombook-rb10-upload/foundation.tar.gz: OK
+Foundation release: /opt/roombook/bootstrap/rb10-6b18cd0
+Pre-install backup: /var/backups/roombook/rb10-20261018T112130Z
+Default incoming policy changed to 'deny'
+(be sure to update your rules accordingly)
+Default outgoing policy changed to 'allow'
+(be sure to update your rules accordingly)
+Default routed policy changed to 'deny'
+(be sure to update your rules accordingly)
+Rules updated
+Rules updated (v6)
+Rules updated
+Rules updated (v6)
+Rules updated
+Rules updated (v6)
+Rules updated
+Rules updated
+Rules updated
+Rules updated
+Rules updated (v6)
+Rules updated
+Rules updated (v6)
+Firewall is active and enabled on system startup
+[INFO]  Skipping k3s download and verify
+[INFO]  Skipping installation of SELinux RPM
+[INFO]  Creating /usr/local/bin/kubectl symlink to k3s
+[INFO]  Creating /usr/local/bin/crictl symlink to k3s
+[INFO]  Skipping /usr/local/bin/ctr symlink to k3s, command exists in PATH at /usr/bin/ctr
+[INFO]  Creating killall script /usr/local/bin/k3s-killall.sh
+[INFO]  Creating uninstall script /usr/local/bin/k3s-uninstall.sh
+[INFO]  env: Creating environment file /etc/systemd/system/k3s.service.env
+[INFO]  systemd: Creating service file /etc/systemd/system/k3s.service
+[INFO]  systemd: Enabling k3s unit
+node/roombook-vps condition met
+namespace/roombook-edge created
+namespace/roombook-monitoring created
+namespace/roombook-prod created
+namespace/roombook-staging created
+resourcequota/runtime-budget created
+resourcequota/runtime-budget created
+resourcequota/runtime-budget created
+resourcequota/runtime-budget created
+serviceaccount/default created
+serviceaccount/default created
+serviceaccount/default created
+serviceaccount/default created
+limitrange/container-defaults created
+limitrange/container-defaults created
+limitrange/container-defaults created
+limitrange/container-defaults created
+priorityclass.scheduling.k8s.io/roombook-edge created
+priorityclass.scheduling.k8s.io/roombook-monitoring created
+priorityclass.scheduling.k8s.io/roombook-production created
+priorityclass.scheduling.k8s.io/roombook-staging created
+networkpolicy.networking.k8s.io/default-deny created
+networkpolicy.networking.k8s.io/dns created
+networkpolicy.networking.k8s.io/default-deny created
+networkpolicy.networking.k8s.io/dns created
+networkpolicy.networking.k8s.io/default-deny created
+networkpolicy.networking.k8s.io/dns created
+networkpolicy.networking.k8s.io/default-deny created
+networkpolicy.networking.k8s.io/dns created
+NAME                  STATUS   AGE
+roombook-edge         Active   1s
+roombook-monitoring   Active   1s
+roombook-prod         Active   1s
+roombook-staging      Active   1s
+NAMESPACE             NAME             REQUEST   LIMIT   AGE
+roombook-edge         runtime-budget                     1s
+roombook-monitoring   runtime-budget                     1s
+roombook-prod         runtime-budget                     1s
+roombook-staging      runtime-budget                     1s
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), deny (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW IN    Anywhere                  
+80/tcp                     ALLOW IN    Anywhere                  
+443/tcp                    ALLOW IN    Anywhere                  
+Anywhere                   ALLOW IN    10.42.0.0/16              
+Anywhere                   ALLOW IN    10.43.0.0/16              
+22/tcp (v6)                ALLOW IN    Anywhere (v6)             
+80/tcp (v6)                ALLOW IN    Anywhere (v6)             
+443/tcp (v6)               ALLOW IN    Anywhere (v6)             
+
+Anywhere                   ALLOW FWD   10.42.0.0/16              
+80/tcp                     ALLOW FWD   Anywhere                  
+443/tcp                    ALLOW FWD   Anywhere                  
+80/tcp (v6)                ALLOW FWD   Anywhere (v6)             
+443/tcp (v6)               ALLOW FWD   Anywhere (v6)             
+
+K3s foundation installed. Application, database, HTTPS, monitoring and recovery qualification remain in their assigned tickets.
+Created symlink /etc/systemd/system/multi-user.target.wants/k3s.service → /etc/systemd/system/k3s.service.
