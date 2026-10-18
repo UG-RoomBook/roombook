@@ -7,6 +7,7 @@ from app.core.config import Settings
 from app.core.errors import ErrorResponse, install_error_handlers
 from app.db.session import Database
 from app.modules.operations.router import router as operations_router
+from app.modules.rooms.router import router as rooms_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -32,6 +33,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.state.database = database
     install_error_handlers(application)
     application.include_router(operations_router)
+    application.include_router(rooms_router)
     return application
 
 

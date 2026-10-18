@@ -35,6 +35,10 @@ Copy the example configuration only for the initial setup. The database listens 
 
 `/health` checks process health, `/ready` checks database connectivity and `/version` returns configured runtime identity. Without `ROOMBOOK_COMMIT_SHA`, the API reports `unknown`. Readiness returns 503 when the database is unavailable; health/version and OpenAPI export remain independent of a database connection. Runtime configuration belongs to Bhathiya; CI/CD wiring belongs to Prattay.
 
+`GET /api/v1/rooms` returns `items`, `total`, `limit` and `offset`, ordered by room name then ID. The default page size is 20, the maximum is 100, and offsets must fit a nonnegative signed 64-bit integer. Without an interval, responses contain room metadata and omit `available`. Supply both `starts_at` and `ends_at` as ISO 8601 timestamps with explicit offsets to receive boolean availability. Intervals use UTC instants and half-open boundaries: a booking ending at the selected start or starting at the selected end does not overlap. Cancelled bookings do not block rooms; inactive rooms remain unavailable. Availability is advisory until booking creation commits.
+
+For example, `http://127.0.0.1:8000/api/v1/rooms?starts_at=2026-10-19T02%3A00%3A00Z&ends_at=2026-10-19T03%3A00%3A00Z&limit=20&offset=0` checks 13:00–14:00 in Melbourne on that date. Missing interval partners, naive timestamps, invalid ranges and out-of-bounds pagination return the shared 422 error envelope; an unavailable database returns 503. Booking endpoints remain pending. RB-14 reconciles the generated frontend client with this implemented room contract and verifies the real browser/API flow with development mocks disabled.
+
 ## Backend checks
 
 Run from `backend/`, explicitly selecting the isolated test database in PowerShell before the checks:
@@ -53,6 +57,8 @@ uv run --locked python scripts/export_openapi.py --check
 ```
 
 Database tests refuse to reset a database whose name does not end in `_test`. They require real PostgreSQL and do not replace it with SQLite or silently count skipped database checks as acceptance. The exported `backend/openapi.json` contains only implemented routes. Update it with `uv run --locked python scripts/export_openapi.py`; it does not require database credentials or a running database. The frontend contract remains provisional until the integration tickets reconcile implemented and pending booking operations.
+
+See the [backend verification record](docs/backend/verification-2026-10-18.md) for measured local results, room availability behaviour and remaining integration/acceptance work.
 
 ## Frontend checks
 

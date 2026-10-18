@@ -37,3 +37,5 @@ These are implementation evidence, not replacements for approved references.
 | Bookings after cancellation | Dark | [768 x 1100](screenshots/bookings-dark-768.jpg) |
 
 Loading, empty, failure, timeout and conflict visuals remain pending visual review. The provisional OpenAPI contract must be reconciled with Daniel's backend export. A timeout can leave a booking outcome uncertain; the UI blocks another matching submission, but backend reconciliation or persisted idempotency is needed for complete timeout acceptance.
+
+This preserves the frontend checkpoint and ownership wording at that time. The [subsequent backend verification](../backend/verification-2026-10-18.md) records the implemented API and revised application ownership.
