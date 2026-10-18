@@ -3,6 +3,12 @@
 Observed: 19 October 2026. Implementation owner: Saad. Independent reviewer: Daniel.
 Status: Implementation checks passed; teammate acceptance and live Staging checks pending.
 
+Tested code: [d03634c](https://github.com/UG-RoomBook/roombook/commit/d03634c95a0b98851e0782e3a38a19594be62167).
+The subsequent evidence-only commit does not change executable code.
+[Captured backend output](evidence/RB-45-backend-tests.txt) retains the final full-suite
+results with the local absolute path redacted. Implementation PR:
+[RoomBook #7](https://github.com/UG-RoomBook/roombook/pull/7).
+
 ## Checks
 
 | Check | Observed result |
