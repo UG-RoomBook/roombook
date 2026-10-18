@@ -1,0 +1,14 @@
+[90m@hey-api/openapi-ts v0.99.0[39m
+
+[90m[Job 1] [39m[90m~[39m [36mGenerating...[39m
+[90m[Job 1] [39m[36m  [1] [39m../backend/openapi.json
+[90m[Job 1] [39m[32m✓[39m [96m<local-path>\roombook-api-check-s3IiaU[39m [90m· 4 files · 65ms[39m
+Generated API files differ from backend/openapi.json.
+Run npm run api:generate, then review and commit the generated changes.
+Negative drift check passed: exit 1 and generated probe file remained unchanged.
+[90m@hey-api/openapi-ts v0.99.0[39m
+
+[90m[Job 1] [39m[90m~[39m [36mGenerating...[39m
+[90m[Job 1] [39m[36m  [1] [39m../backend/openapi.json
+[90m[Job 1] [39m[32m✓[39m [96m<local-path>\roombook-api-check-I5JYAs[39m [90m· 4 files · 57ms[39m
+Generated API files match backend/openapi.json.

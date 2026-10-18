@@ -1,0 +1,91 @@
+{
+  "status": "Only native viewport verified; requested width overrides did not apply",
+  "requestedWidths": [
+    320,
+    390,
+    768,
+    1440,
+    1920
+  ],
+  "observedViewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "checks": [
+    {
+      "documentHeight": 1015,
+      "documentWidth": 1265,
+      "height": 720,
+      "panels": [
+        {
+          "class": "sw-search",
+          "height": 103,
+          "left": 213,
+          "right": 1236,
+          "width": 1023
+        },
+        {
+          "class": "sw-room",
+          "height": 480.03125,
+          "left": 213,
+          "right": 715.5,
+          "width": 502.5
+        },
+        {
+          "class": "sw-room",
+          "height": 480.03125,
+          "left": 733.5,
+          "right": 1236,
+          "width": 502.5
+        },
+        {
+          "class": "sw-footer",
+          "height": 31.5,
+          "left": 213,
+          "right": 1236,
+          "width": 1023
+        }
+      ],
+      "theme": "Light",
+      "width": 1280
+    },
+    {
+      "documentHeight": 1015,
+      "documentWidth": 1265,
+      "height": 720,
+      "panels": [
+        {
+          "class": "sw-search",
+          "height": 103,
+          "left": 213,
+          "right": 1236,
+          "width": 1023
+        },
+        {
+          "class": "sw-room",
+          "height": 480.03125,
+          "left": 213,
+          "right": 715.5,
+          "width": 502.5
+        },
+        {
+          "class": "sw-room",
+          "height": 480.03125,
+          "left": 733.5,
+          "right": 1236,
+          "width": 502.5
+        },
+        {
+          "class": "sw-footer",
+          "height": 31.5,
+          "left": 213,
+          "right": 1236,
+          "width": 1023
+        }
+      ],
+      "theme": "Dark",
+      "width": 1280
+    }
+  ],
+  "outstanding": "Responsive acceptance across 320–1920 px remains pending; previous RB-12 evidence is separate."
+}
