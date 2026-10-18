@@ -1,12 +1,7 @@
 import { z } from 'zod';
 import { client } from './generated/client.gen';
-import {
-  cancelBooking,
-  createBooking,
-  getVersion,
-  listBookings,
-  listRooms,
-} from './generated/sdk.gen';
+import { getVersion, listRooms } from './generated/sdk.gen';
+import { bookingListSchema, bookingSchema, provisionalBookings } from './provisional-bookings';
 import type { CreateBooking, Pagination } from './types';
 
 export class ApiError extends Error {
@@ -36,22 +31,12 @@ const roomSchema = z.object({
   active: z.boolean(),
   available: z.boolean().optional(),
 });
-const bookingSchema = z.object({
-  id: z.string().uuid(),
-  room_id: z.string().uuid(),
-  starts_at: z.string().datetime({ offset: true }),
-  ends_at: z.string().datetime({ offset: true }),
-  status: z.enum(['active', 'cancelled']),
-  created_at: z.string().datetime({ offset: true }),
-  cancelled_at: z.string().datetime({ offset: true }).nullable(),
-});
 const paginationSchema = {
   total: z.number().int().nonnegative(),
   limit: z.number().int().positive().max(100),
   offset: z.number().int().nonnegative(),
 };
 const roomListSchema = z.object({ items: z.array(roomSchema), ...paginationSchema });
-const bookingListSchema = z.object({ items: z.array(bookingSchema), ...paginationSchema });
 const versionSchema = z.object({
   commit_sha: z.string().min(1),
   environment: z.string().min(1),
@@ -109,7 +94,9 @@ async function readResult<T>(
             : 'SERVICE_ERROR',
         requestId: parsed.success ? parsed.data.error.request_id : undefined,
         uncertain:
-          mutation && (!result.response || result.response.ok || result.response.status >= 500),
+          mutation &&
+          !(parsed.success && parsed.data.error.code === 'FEATURE_NOT_AVAILABLE') &&
+          (!result.response || result.response.ok || result.response.status >= 500),
       },
     );
   }
@@ -144,14 +131,14 @@ export const api = {
     signal?: AbortSignal,
   ) =>
     readResult(
-      (requestSignal) => listBookings({ query, signal: requestSignal }),
+      (requestSignal) => provisionalBookings.list(query, requestSignal),
       bookingListSchema,
       false,
       signal,
     ),
   createBooking: (body: CreateBooking) =>
     readResult(
-      (signal) => createBooking({ body, signal }),
+      (signal) => provisionalBookings.create(body, signal),
       bookingSchema.refine(
         (booking) =>
           booking.room_id === body.room_id &&
@@ -163,7 +150,7 @@ export const api = {
     ),
   cancelBooking: (id: string) =>
     readResult(
-      (signal) => cancelBooking({ path: { id }, signal }),
+      (signal) => provisionalBookings.cancel(id, signal),
       bookingSchema.refine((booking) => booking.id === id && booking.status === 'cancelled'),
       true,
     ),

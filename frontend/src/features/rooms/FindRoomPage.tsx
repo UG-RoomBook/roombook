@@ -5,6 +5,7 @@ import { Search } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { useRooms } from '@/shared/api/queries';
+import { ApiError } from '@/shared/api/client';
 import type { Room, SearchFilters } from '@/shared/api/types';
 import { campusToday, formatCampusDate, toCampusInterval } from '@/shared/dates';
 import { Button, PageTitle, StateMessage } from '@/shared/ui';
@@ -116,6 +117,8 @@ export function FindRoomPage() {
   const page = rooms.data;
   const matching = page?.items.filter((room) => room.capacity >= applied.capacity) ?? [];
   const hasNext = Boolean(page && page.offset + page.limit < page.total);
+  const lastOffset = Math.floor(Math.max(0, (page?.total ?? 0) - 1) / PAGE_SIZE) * PAGE_SIZE;
+  const previousOffset = Math.max(0, Math.min(offset - PAGE_SIZE, lastOffset));
   const available = matching.filter((room) => room.active && room.available === true).length;
   const firstError =
     errors.date?.message ??
@@ -123,7 +126,10 @@ export function FindRoomPage() {
     errors.end?.message ??
     errors.capacity?.message;
   const errorMessage = firstError ?? interval.error;
-  const showResults = !interval.error && !rooms.isError && page;
+  // Cached availability must be checked again before offering a booking.
+  const showResults = !interval.error && !rooms.isError && !rooms.isFetching && page;
+  const paginated = offset > 0 || hasNext;
+  const loadError = rooms.error instanceof ApiError ? rooms.error : undefined;
   let range = 'Choose a time to check availability.';
   if (interval.hasInterval) {
     range = `${formatCampusDate(applied.date)} · ${applied.start}–${applied.end}`;
@@ -205,25 +211,28 @@ export function FindRoomPage() {
           {showResults && (
             <span className="sw-count" aria-live="polite">
               {interval.hasInterval
-                ? `${available} of ${matching.length} available`
-                : `${matching.length} rooms`}
+                ? `${available} of ${matching.length} available${paginated ? ' on this page' : ''}`
+                : `${matching.length} rooms${paginated ? ' on this page' : ''}`}
             </span>
           )}
         </h2>
         <span className="sw-small">{range}</span>
       </div>
-      {!interval.error && rooms.isPending && (
+      {!interval.error && (rooms.isPending || rooms.isFetching) && (
         <StateMessage title="Loading rooms" message="Checking room information." />
       )}
-      {!interval.error && rooms.isError && (
-        <StateMessage
-          title="Rooms could not be loaded"
-          message="Try again to get current room information."
-          variant="error"
-          onRetry={() => {
-            void rooms.refetch();
-          }}
-        />
+      {!interval.error && rooms.isError && !rooms.isFetching && (
+        <>
+          <StateMessage
+            title="Rooms could not be loaded"
+            message={loadError?.message ?? 'Try again to get current room information.'}
+            variant="error"
+            onRetry={() => {
+              void rooms.refetch();
+            }}
+          />
+          {loadError?.requestId && <p className="sw-small">Request ID: {loadError.requestId}</p>}
+        </>
       )}
       {showResults && (
         <>
@@ -250,11 +259,11 @@ export function FindRoomPage() {
               />
             )}
           </div>
-          {(offset > 0 || hasNext) && (
+          {paginated && (
             <nav className="sw-actions" aria-label="Room pages">
               <Button
                 disabled={offset === 0 || rooms.isFetching}
-                onClick={() => goToPage(Math.max(0, offset - PAGE_SIZE))}
+                onClick={() => goToPage(previousOffset)}
               >
                 Previous room page
               </Button>

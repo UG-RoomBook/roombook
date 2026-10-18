@@ -12,6 +12,7 @@ afterEach(() => {
   server.resetHandlers();
   resetMockData();
   vi.useRealTimers();
+  vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });
 afterAll(() => server.close());
@@ -27,6 +28,134 @@ describe('API boundary', () => {
     const rooms = await api.rooms({ starts_at: input.starts_at, ends_at: input.ends_at });
     expect(rooms.items).toHaveLength(2);
     expect(rooms.items[0]).toMatchObject({ name: 'The Studio', available: true });
+  });
+
+  it('requests explicit offsets and pagination without inventing capacity API parameters', async () => {
+    let observed: URL | undefined;
+    server.use(
+      http.get('*/api/v1/rooms', ({ request }) => {
+        observed = new URL(request.url);
+        return HttpResponse.json({
+          items: [{ ...mockRooms[1], available: false }],
+          total: 2,
+          limit: 1,
+          offset: 1,
+        });
+      }),
+    );
+    await api.rooms({ starts_at: input.starts_at, ends_at: input.ends_at, limit: 1, offset: 1 });
+    expect(observed?.searchParams.get('starts_at')).toBe(input.starts_at);
+    expect(observed?.searchParams.get('ends_at')).toBe(input.ends_at);
+    expect(observed?.searchParams.get('limit')).toBe('1');
+    expect(observed?.searchParams.get('offset')).toBe('1');
+    expect(observed?.searchParams.has('capacity')).toBe(false);
+  });
+
+  it('accepts metadata without making up availability for an unrequested interval', async () => {
+    const result = await api.rooms();
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0]).not.toHaveProperty('available');
+  });
+
+  it('rejects interval results missing availability', async () => {
+    server.use(
+      http.get('*/api/v1/rooms', () =>
+        HttpResponse.json({ items: mockRooms, total: 2, limit: 20, offset: 0 }),
+      ),
+    );
+    await expect(api.rooms(input)).rejects.toMatchObject({
+      status: 200,
+      code: 'INVALID_RESPONSE',
+    });
+  });
+
+  it('preserves the backend validation error and request correlation', async () => {
+    server.use(
+      http.get('*/api/v1/rooms', () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'ends_at must be after starts_at',
+              request_id: '75a6368e-566b-4cc6-b2f9-1c62831a610d',
+              details: [{ field: 'ends_at', code: 'interval_order', message: 'Invalid interval' }],
+            },
+          },
+          { status: 422 },
+        ),
+      ),
+    );
+    await expect(api.rooms(input)).rejects.toMatchObject({
+      status: 422,
+      code: 'VALIDATION_ERROR',
+      message: 'ends_at must be after starts_at',
+      requestId: '75a6368e-566b-4cc6-b2f9-1c62831a610d',
+      uncertain: false,
+    });
+  });
+
+  it('reads the implemented runtime identity contract', async () => {
+    expect(await api.version()).toEqual({
+      commit_sha: 'mock-data',
+      environment: 'development',
+      version: '0.1.0',
+    });
+  });
+
+  it('rejects an incomplete runtime identity', async () => {
+    server.use(http.get('*/version', () => HttpResponse.json({ version: '0.1.0' })));
+    await expect(api.version()).rejects.toMatchObject({ code: 'INVALID_RESPONSE' });
+  });
+
+  it('does not send unimplemented booking requests in real mode', async () => {
+    vi.stubEnv('MODE', 'development');
+    vi.stubEnv('DEV', true);
+    vi.stubEnv('VITE_ENABLE_MOCKS', 'false');
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    const expected = { status: 501, code: 'FEATURE_NOT_AVAILABLE', uncertain: false };
+    await expect(api.createBooking(input)).rejects.toMatchObject(expected);
+    await expect(api.cancelBooking('20000000-0000-4000-8000-000000000001')).rejects.toMatchObject(
+      expected,
+    );
+    await expect(api.bookings({ from: input.starts_at, to: input.ends_at })).rejects.toMatchObject(
+      expected,
+    );
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('enables provisional booking requests only with the development mock opt-in', async () => {
+    vi.stubEnv('MODE', 'development');
+    vi.stubEnv('DEV', true);
+    vi.stubEnv('VITE_ENABLE_MOCKS', 'true');
+    expect(await api.createBooking(input)).toMatchObject({
+      room_id: input.room_id,
+      status: 'active',
+    });
+  });
+
+  it('does not enable provisional booking requests in production when a mock flag is set', async () => {
+    vi.stubEnv('MODE', 'production');
+    vi.stubEnv('DEV', false);
+    vi.stubEnv('VITE_ENABLE_MOCKS', 'true');
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    await expect(api.createBooking(input)).rejects.toMatchObject({ code: 'FEATURE_NOT_AVAILABLE' });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('does not enable provisional booking requests in a production build using test mode', async () => {
+    vi.stubEnv('MODE', 'test');
+    vi.stubEnv('DEV', false);
+    vi.stubEnv('VITE_ENABLE_MOCKS', 'true');
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    const expected = { status: 501, code: 'FEATURE_NOT_AVAILABLE', uncertain: false };
+    await expect(api.createBooking(input)).rejects.toMatchObject(expected);
+    await expect(api.cancelBooking('20000000-0000-4000-8000-000000000001')).rejects.toMatchObject(
+      expected,
+    );
+    await expect(api.bookings({ from: input.starts_at, to: input.ends_at })).rejects.toMatchObject(
+      expected,
+    );
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it('preserves an explicit-offset booking interval and observes cancellation', async () => {

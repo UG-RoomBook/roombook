@@ -7,6 +7,13 @@ export type BookingFeedback = {
 };
 
 export function bookingFeedback(error: unknown): BookingFeedback {
+  if (error instanceof ApiError && error.code === 'FEATURE_NOT_AVAILABLE') {
+    return {
+      title: 'Booking is not available yet',
+      message: error.message,
+      uncertain: false,
+    };
+  }
   if (error instanceof ApiError && error.uncertain) {
     return {
       title: 'Booking outcome not confirmed',
@@ -45,6 +52,13 @@ export function bookingFeedback(error: unknown): BookingFeedback {
 }
 
 export function cancellationFeedback(error: unknown): BookingFeedback {
+  if (error instanceof ApiError && error.code === 'FEATURE_NOT_AVAILABLE') {
+    return {
+      title: 'Cancellation is not available yet',
+      message: error.message,
+      uncertain: false,
+    };
+  }
   if (error instanceof ApiError && error.uncertain) {
     return {
       title: 'Cancellation outcome not confirmed',

@@ -14,7 +14,7 @@ function RuntimeIdentity() {
     <footer className="sw-footer">
       <span>
         {demo ? 'Demo data · ' : ''}
-        {version.data
+        {version.data && !version.isError
           ? `${version.data.environment} · ${version.data.commit_sha.slice(0, 7)} · ${version.data.version}`
           : 'Runtime identity unavailable'}
       </span>

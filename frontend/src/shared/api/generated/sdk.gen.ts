@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CancelBookingData, CancelBookingErrors, CancelBookingResponses, CreateBookingData, CreateBookingErrors, CreateBookingResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ListBookingsData, ListBookingsErrors, ListBookingsResponses, ListRoomsData, ListRoomsErrors, ListRoomsResponses } from './types.gen';
+import type { GetHealthData, GetHealthErrors, GetHealthResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ListRoomsData, ListRoomsErrors, ListRoomsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -18,19 +18,28 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
 
+/**
+ * Get Rooms
+ */
 export const listRooms = <ThrowOnError extends boolean = false>(options?: Options<ListRoomsData, ThrowOnError>): RequestResult<ListRoomsResponses, ListRoomsErrors, ThrowOnError> => (options?.client ?? client).get<ListRoomsResponses, ListRoomsErrors, ThrowOnError>({ url: '/api/v1/rooms', ...options });
 
-export const listBookings = <ThrowOnError extends boolean = false>(options: Options<ListBookingsData, ThrowOnError>): RequestResult<ListBookingsResponses, ListBookingsErrors, ThrowOnError> => (options.client ?? client).get<ListBookingsResponses, ListBookingsErrors, ThrowOnError>({ url: '/api/v1/bookings', ...options });
+/**
+ * Health
+ *
+ * Report process health without accessing PostgreSQL.
+ */
+export const getHealth = <ThrowOnError extends boolean = false>(options?: Options<GetHealthData, ThrowOnError>): RequestResult<GetHealthResponses, GetHealthErrors, ThrowOnError> => (options?.client ?? client).get<GetHealthResponses, GetHealthErrors, ThrowOnError>({ url: '/health', ...options });
 
-export const createBooking = <ThrowOnError extends boolean = false>(options: Options<CreateBookingData, ThrowOnError>): RequestResult<CreateBookingResponses, CreateBookingErrors, ThrowOnError> => (options.client ?? client).post<CreateBookingResponses, CreateBookingErrors, ThrowOnError>({
-    url: '/api/v1/bookings',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
+/**
+ * Readiness
+ *
+ * Report readiness after a bounded PostgreSQL SELECT 1.
+ */
+export const getReadiness = <ThrowOnError extends boolean = false>(options?: Options<GetReadinessData, ThrowOnError>): RequestResult<GetReadinessResponses, GetReadinessErrors, ThrowOnError> => (options?.client ?? client).get<GetReadinessResponses, GetReadinessErrors, ThrowOnError>({ url: '/ready', ...options });
 
-export const cancelBooking = <ThrowOnError extends boolean = false>(options: Options<CancelBookingData, ThrowOnError>): RequestResult<CancelBookingResponses, CancelBookingErrors, ThrowOnError> => (options.client ?? client).post<CancelBookingResponses, CancelBookingErrors, ThrowOnError>({ url: '/api/v1/bookings/{id}/cancel', ...options });
-
+/**
+ * Version
+ *
+ * Return the configured source identity and environment, without secrets.
+ */
 export const getVersion = <ThrowOnError extends boolean = false>(options?: Options<GetVersionData, ThrowOnError>): RequestResult<GetVersionResponses, GetVersionErrors, ThrowOnError> => (options?.client ?? client).get<GetVersionResponses, GetVersionErrors, ThrowOnError>({ url: '/version', ...options });
