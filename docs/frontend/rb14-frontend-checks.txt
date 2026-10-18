@@ -1,0 +1,142 @@
+RB-14 frontend checks 2026-10-18T20:35:04.3598919+11:00
+
+> @roombook/frontend@0.1.0 api:check
+> node scripts/check-api.mjs
+
+[90m@hey-api/openapi-ts v0.99.0[39m
+
+[90m[Job 1] [39m[90m~[39m [36mGenerating...[39m
+[90m[Job 1] [39m[36m  [1] [39m../backend/openapi.json
+[90m[Job 1] [39m[32m✓[39m [96m./<local-path>\roombook-api-check-7aAMxA[39m [90m· 4 files · 58ms[39m
+Generated API files match backend/openapi.json.
+
+> @roombook/frontend@0.1.0 format:check
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> @roombook/frontend@0.1.0 lint
+> eslint . --max-warnings 0
+
+
+> @roombook/frontend@0.1.0 typecheck
+> tsc -b
+
+
+> @roombook/frontend@0.1.0 test:coverage
+> vitest run --coverage
+
+
+ RUN  v5.0.5 <local-path>/frontend
+      Coverage enabled with v8
+
+
+ Test Files  11 passed (11)
+      Tests  97 passed (97)
+   Start at  20:35:22
+   Duration  18.76s (environment 76%, setup 15%, import 4%, tests 3%, transform 1%)
+
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   95.27 |     91.3 |   93.37 |   96.78 |                   
+ app               |   91.42 |     87.5 |   86.95 |   95.23 |                   
+  App.tsx          |      95 |    96.42 |     100 |     100 | 35                
+  Providers.tsx    |       0 |      100 |       0 |       0 | 6-15              
+  ...eProvider.tsx |   96.55 |    69.23 |    90.9 |     100 | 44,57             
+  theme-context.ts |    90.9 |    85.71 |     100 |     100 | 28                
+ features/bookings |   94.62 |    90.54 |   91.66 |   97.15 |                   
+  BookingsPage.tsx |   93.82 |    84.09 |    91.3 |   97.33 | 249,289           
+  ...okingPage.tsx |   92.53 |     92.3 |   89.47 |   95.31 | 17,142,154        
+  selection.ts     |     100 |    95.83 |     100 |     100 | 34                
+ features/rooms    |     100 |    93.07 |     100 |     100 |                   
+  FindRoomPage.tsx |     100 |    92.52 |     100 |     100 | ...55,186,193,228 
+  RoomCard.tsx     |     100 |    95.65 |     100 |     100 | 21                
+ shared/api        |    95.5 |    88.88 |      95 |   95.18 |                   
+  client.ts        |   97.72 |    91.48 |     100 |   97.61 | 75                
+  queries.ts       |   91.89 |    82.35 |   88.23 |    90.9 | 75,137-139        
+ shared/dates      |   96.55 |    88.88 |     100 |   96.55 |                   
+  index.ts         |   96.55 |    88.88 |     100 |   96.55 | 21                
+ shared/ui         |   94.44 |    96.29 |   88.88 |   93.33 |                   
+  Button.tsx       |   93.33 |      100 |   83.33 |   91.66 | 48                
+  PageTitle.tsx    |     100 |     87.5 |     100 |     100 | 19                
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 95.27% ( 444/466 )
+Branches     : 91.3% ( 504/552 )
+Functions    : 93.37% ( 141/151 )
+Lines        : 96.78% ( 422/436 )
+================================================================================
+
+> @roombook/frontend@0.1.0 build
+> tsc -b && vite build
+
+vite v7.3.7 building client environment for production...
+transforming...
+node_modules/zod/v4/core/regexes.js (74:0): A comment
+
+"/** Anchors a pattern source. The interpolation lives here rather than at the call site because
+ * esbuild will not drop a `@__PURE__` call whose own argument interpolates a variable, but it
+ * will drop `anchor(dateSource)`. Keeping it inline pinned `date` into every bundle. */"
+
+in "node_modules/zod/v4/core/regexes.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+node_modules/zod/v4/core/util.js (400:0): A comment
+
+"// Wrapped in a `@__PURE__` IIFE: esbuild never tree-shakes a top-level initializer that contains a member access on `Number`, so the bare object literal survived into every bundle."
+
+in "node_modules/zod/v4/core/util.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+✓ 2129 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                                   1.09 kB │ gzip:   0.54 kB
+dist/assets/space-grotesk-vietnamese-700-normal-DMty7AZE.woff2    4.20 kB
+dist/assets/space-grotesk-vietnamese-400-normal-B7xT_GF5.woff2    4.30 kB
+dist/assets/space-grotesk-vietnamese-600-normal-DUi7WF5p.woff2    4.31 kB
+dist/assets/space-grotesk-vietnamese-500-normal-BmEvtly_.woff2    4.32 kB
+dist/assets/space-grotesk-vietnamese-700-normal-Duxec5Rn.woff     5.59 kB
+dist/assets/space-grotesk-vietnamese-600-normal-D6zpsUhD.woff     5.70 kB
+dist/assets/space-grotesk-vietnamese-500-normal-BTqKIpxg.woff     5.72 kB
+dist/assets/space-grotesk-vietnamese-400-normal-BIWiOVfw.woff     5.73 kB
+dist/assets/dm-sans-latin-ext-400-normal-BtiwyxMk.woff2           7.36 kB
+dist/assets/dm-sans-latin-ext-600-normal-4vooXBpG.woff2           7.42 kB
+dist/assets/dm-sans-latin-ext-500-normal-BJfUCQsA.woff2           7.43 kB
+dist/assets/dm-sans-latin-ext-700-normal-CJIcxD6K.woff2           7.45 kB
+dist/assets/dm-sans-latin-ext-400-normal-BjWJ59Pq.woff            9.98 kB
+dist/assets/dm-sans-latin-ext-700-normal-BLI3TTWz.woff           10.01 kB
+dist/assets/dm-sans-latin-ext-600-normal-DRtaDpgU.woff           10.02 kB
+dist/assets/dm-sans-latin-ext-500-normal-DR84L5F-.woff           10.07 kB
+dist/assets/space-grotesk-latin-ext-700-normal-BQnZhY3m.woff2    11.99 kB
+dist/assets/space-grotesk-latin-ext-400-normal-CfP_5XZW.woff2    12.26 kB
+dist/assets/space-grotesk-latin-ext-500-normal-DUe3BAxM.woff2    12.27 kB
+dist/assets/space-grotesk-latin-ext-600-normal-DxxdqCpr.woff2    12.29 kB
+dist/assets/space-grotesk-latin-700-normal-RjhwGPKo.woff2        12.84 kB
+dist/assets/space-grotesk-latin-600-normal-DjKNqYRj.woff2        13.28 kB
+dist/assets/space-grotesk-latin-500-normal-lFbtlQH6.woff2        13.31 kB
+dist/assets/space-grotesk-latin-400-normal-CJ-V5oYT.woff2        13.39 kB
+dist/assets/dm-sans-latin-600-normal-Aqo67rzb.woff2              14.14 kB
+dist/assets/dm-sans-latin-400-normal-CW0RaeGs.woff2              14.20 kB
+dist/assets/dm-sans-latin-500-normal-B9HHJjqV.woff2              14.30 kB
+dist/assets/dm-sans-latin-700-normal-DvUfVpUG.woff2              14.35 kB
+dist/assets/space-grotesk-latin-700-normal-CwsQ-cCU.woff         16.42 kB
+dist/assets/space-grotesk-latin-ext-700-normal-HVCqSBdx.woff     16.46 kB
+dist/assets/space-grotesk-latin-ext-600-normal-VcznFIpX.woff     16.73 kB
+dist/assets/space-grotesk-latin-ext-400-normal-DRPE3kg4.woff     16.79 kB
+dist/assets/space-grotesk-latin-ext-500-normal-3dgZTiw9.woff     16.79 kB
+dist/assets/space-grotesk-latin-600-normal-BflQw4A9.woff         16.88 kB
+dist/assets/space-grotesk-latin-500-normal-CNSSEhBt.woff         16.99 kB
+dist/assets/space-grotesk-latin-400-normal-BnQMeOim.woff         17.00 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+dist/assets/dm-sans-latin-600-normal-BmdmIIQ2.woff               18.32 kB
+dist/assets/dm-sans-latin-400-normal-BwCSEQnW.woff               18.36 kB
+dist/assets/dm-sans-latin-700-normal-CUSSCpQX.woff               18.50 kB
+dist/assets/dm-sans-latin-500-normal-Dr3UlScf.woff               18.52 kB
+dist/assets/index-DXHGL-BK.css                                   37.86 kB │ gzip:   7.67 kB
+dist/assets/index-CRyEmXvH.js                                   660.00 kB │ gzip: 203.50 kB
+✓ built in 2.63s

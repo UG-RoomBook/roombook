@@ -1,0 +1,267 @@
+{
+  "backendIdentity": {
+    "commit_sha": "826b18d85b46897cc013ff9528c7af1dfac9e2ee",
+    "environment": "development",
+    "version": "0.1.0"
+  },
+  "dataSource": "FastAPI with local PostgreSQL, no MSW",
+  "checks": [
+    {
+      "path": "/version",
+      "query": null,
+      "status": 200,
+      "body": {
+        "commit_sha": "826b18d85b46897cc013ff9528c7af1dfac9e2ee",
+        "environment": "development",
+        "version": "0.1.0"
+      }
+    },
+    {
+      "path": "/health",
+      "query": null,
+      "status": 200,
+      "body": {
+        "status": "healthy"
+      }
+    },
+    {
+      "path": "/ready",
+      "query": null,
+      "status": 200,
+      "body": {
+        "status": "ready"
+      }
+    },
+    {
+      "path": "/api/v1/rooms",
+      "query": null,
+      "status": 200,
+      "body": {
+        "items": [
+          {
+            "id": "10000000-0000-4000-8000-000000000002",
+            "name": "The Forum",
+            "location": "North building \u00b7 Level 2",
+            "capacity": 8,
+            "active": true
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000001",
+            "name": "The Studio",
+            "location": "West building \u00b7 Level 1",
+            "capacity": 4,
+            "active": true
+          }
+        ],
+        "total": 2,
+        "limit": 20,
+        "offset": 0
+      }
+    },
+    {
+      "path": "/api/v1/rooms",
+      "query": {
+        "starts_at": "2026-10-19T13:00:00+11:00",
+        "ends_at": "2026-10-19T14:00:00+11:00"
+      },
+      "status": 200,
+      "body": {
+        "items": [
+          {
+            "id": "10000000-0000-4000-8000-000000000002",
+            "name": "The Forum",
+            "location": "North building \u00b7 Level 2",
+            "capacity": 8,
+            "active": true,
+            "available": true
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000001",
+            "name": "The Studio",
+            "location": "West building \u00b7 Level 1",
+            "capacity": 4,
+            "active": true,
+            "available": true
+          }
+        ],
+        "total": 2,
+        "limit": 20,
+        "offset": 0
+      }
+    },
+    {
+      "path": "/api/v1/rooms",
+      "query": {
+        "starts_at": "2026-10-19T02:00:00Z",
+        "ends_at": "2026-10-19T03:00:00Z"
+      },
+      "status": 200,
+      "body": {
+        "items": [
+          {
+            "id": "10000000-0000-4000-8000-000000000002",
+            "name": "The Forum",
+            "location": "North building \u00b7 Level 2",
+            "capacity": 8,
+            "active": true,
+            "available": true
+          },
+          {
+            "id": "10000000-0000-4000-8000-000000000001",
+            "name": "The Studio",
+            "location": "West building \u00b7 Level 1",
+            "capacity": 4,
+            "active": true,
+            "available": true
+          }
+        ],
+        "total": 2,
+        "limit": 20,
+        "offset": 0
+      }
+    },
+    {
+      "path": "/api/v1/rooms",
+      "query": {
+        "limit": 1,
+        "offset": 0
+      },
+      "status": 200,
+      "body": {
+        "items": [
+          {
+            "id": "10000000-0000-4000-8000-000000000002",
+            "name": "The Forum",
+            "location": "North building \u00b7 Level 2",
+            "capacity": 8,
+            "active": true
+          }
+        ],
+        "total": 2,
+        "limit": 1,
+        "offset": 0
+      }
+    },
+    {
+      "path": "/api/v1/rooms",
+      "query": {
+        "limit": 1,
+        "offset": 1
+      },
+      "status": 200,
+      "body": {
+        "items": [
+          {
+            "id": "10000000-0000-4000-8000-000000000001",
+            "name": "The Studio",
+            "location": "West building \u00b7 Level 1",
+            "capacity": 4,
+            "active": true
+          }
+        ],
+        "total": 2,
+        "limit": 1,
+        "offset": 1
+      }
+    },
+    {
+      "path": "/api/v1/rooms",
+      "query": {
+        "limit": 20,
+        "offset": 1000
+      },
+      "status": 200,
+      "body": {
+        "items": [],
+        "total": 2,
+        "limit": 20,
+        "offset": 1000
+      }
+    },
+    {
+      "path": "/api/v1/rooms",
+      "query": {
+        "limit": 101
+      },
+      "status": 422,
+      "body": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Check the request fields.",
+          "request_id": "8c9f1773-7b71-4ea2-b8a9-225d251764af",
+          "details": [
+            {
+              "field": "query.limit",
+              "code": "less_than_equal",
+              "message": "The value exceeds the allowed maximum."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "path": "/api/v1/rooms",
+      "query": {
+        "offset": -1
+      },
+      "status": 422,
+      "body": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Check the request fields.",
+          "request_id": "f63e7931-f9dd-4b61-81e4-3810f96f3c56",
+          "details": [
+            {
+              "field": "query.offset",
+              "code": "greater_than_equal",
+              "message": "The value is below the allowed minimum."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "path": "/api/v1/rooms",
+      "query": {
+        "starts_at": "2026-10-19T13:00:00+11:00"
+      },
+      "status": 422,
+      "body": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Check the request fields.",
+          "request_id": "8fac3962-7145-4cb7-a106-ca76cef7b53f",
+          "details": [
+            {
+              "field": "query",
+              "code": "value_error",
+              "message": "Invalid value."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "path": "/api/v1/rooms",
+      "query": {
+        "starts_at": "2026-10-19T13:00:00",
+        "ends_at": "2026-10-19T14:00:00+11:00"
+      },
+      "status": 422,
+      "body": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Check the request fields.",
+          "request_id": "46a85833-3584-48e9-bf76-32da21431f94",
+          "details": [
+            {
+              "field": "query.starts_at",
+              "code": "timezone_aware",
+              "message": "Include a timezone offset."
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

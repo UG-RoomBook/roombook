@@ -37,7 +37,9 @@ Copy the example configuration only for the initial setup. The database listens 
 
 `GET /api/v1/rooms` returns `items`, `total`, `limit` and `offset`, ordered by room name then ID. The default page size is 20, the maximum is 100, and offsets must fit a nonnegative signed 64-bit integer. Without an interval, responses contain room metadata and omit `available`. Supply both `starts_at` and `ends_at` as ISO 8601 timestamps with explicit offsets to receive boolean availability. Intervals use UTC instants and half-open boundaries: a booking ending at the selected start or starting at the selected end does not overlap. Cancelled bookings do not block rooms; inactive rooms remain unavailable. Availability is advisory until booking creation commits.
 
-For example, `http://127.0.0.1:8000/api/v1/rooms?starts_at=2026-10-19T02%3A00%3A00Z&ends_at=2026-10-19T03%3A00%3A00Z&limit=20&offset=0` checks 13:00–14:00 in Melbourne on that date. Missing interval partners, naive timestamps, invalid ranges and out-of-bounds pagination return the shared 422 error envelope; an unavailable database returns 503. Booking endpoints remain pending. RB-14 reconciles the generated frontend client with this implemented room contract and verifies the real browser/API flow with development mocks disabled.
+For example, `http://127.0.0.1:8000/api/v1/rooms?starts_at=2026-10-19T02%3A00%3A00Z&ends_at=2026-10-19T03%3A00%3A00Z&limit=20&offset=0` checks 13:00–14:00 in Melbourne on that date. Missing interval partners, naive timestamps, invalid ranges and out-of-bounds pagination return the shared 422 error envelope; an unavailable database returns 503. The frontend uses this implemented room contract. Booking endpoints remain pending.
+
+Room search keeps applied filters and pagination in the URL. Group size filters the current API page, so paginated counts and empty states describe that page. Availability is withheld while refreshing; failed requests show retry feedback and a request ID when supplied. Metadata without a selected interval does not claim availability. See the [RB-14 verification record](docs/frontend/RB-14-verification.md) for real browser/API observations and remaining acceptance work.
 
 ## Backend checks
 
@@ -56,7 +58,7 @@ uv run --locked alembic check
 uv run --locked python scripts/export_openapi.py --check
 ```
 
-Database tests refuse to reset a database whose name does not end in `_test`. They require real PostgreSQL and do not replace it with SQLite or silently count skipped database checks as acceptance. The exported `backend/openapi.json` contains only implemented routes. Update it with `uv run --locked python scripts/export_openapi.py`; it does not require database credentials or a running database. The frontend contract remains provisional until the integration tickets reconcile implemented and pending booking operations.
+Database tests refuse to reset a database whose name does not end in `_test`. They require real PostgreSQL and do not replace it with SQLite or silently count skipped database checks as acceptance. The exported `backend/openapi.json` contains only implemented routes. Update it with `uv run --locked python scripts/export_openapi.py`; it does not require database credentials or a running database. The frontend generator reads that export directly.
 
 See the [backend verification record](docs/backend/verification-2026-10-18.md) for measured local results, room availability behaviour and remaining integration/acceptance work.
 
@@ -80,12 +82,14 @@ See the [frontend verification record](docs/frontend/verification-2026-10-18.md)
 
 ## Backend handoff
 
-`frontend/openapi/roombook.json` is a **provisional frontend development contract** transcribed from the accepted wiki, not a FastAPI export. Saad owns application/backend implementation; Daniel owns test strategy and independent integration/acceptance testing. Reconcile response schemas, stable operation IDs, error envelopes and `items/total/limit/offset` pagination with the backend's exported OpenAPI before accepting real integration. Regenerate with `npm run api:generate`; never edit `src/shared/api/generated/` manually.
+`backend/openapi.json` is the source for the pinned Hey API generator. Saad owns application/backend implementation; Daniel owns test strategy and independent integration/acceptance testing. After an API change, export the schema from `backend/`, run `npm run api:generate` from `frontend/`, and commit both the schema and generated output. Never edit `src/shared/api/generated/` manually. `npm run api:check` regenerates outside the checkout and fails on drift without changing tracked files. Run the separate backend export check to detect implementation/schema drift.
 
-The app uses relative `/api/v1/rooms`, `/api/v1/bookings`, cancellation and `/version` endpoints. Melbourne dates become explicit-offset timestamps; booking creation is never automatically retried. An uncertain outcome keeps its selection and directs the user to check bookings. The affected review URL and mutation cache guard against another submission; without backend request reconciliation or persisted idempotency, an empty refreshed list cannot prove a timed-out request will never complete. Real timeout acceptance remains pending integration.
+Real mode calls relative `/api/v1/rooms` and `/version` endpoints. Melbourne dates become explicit-offset timestamps. The existing booking screens use a separate provisional adapter for opt-in development MSW and tests; real mode reports booking as unavailable without sending an unimplemented booking request. Replace that adapter with generated operations when owned booking APIs are implemented in RB-15 through RB-18.
+
+In the development booking demonstration, creation is never automatically retried. An uncertain outcome keeps its selection and directs the user to check bookings. Without backend reconciliation or persisted idempotency, an empty refreshed list cannot prove a timed-out request will never complete. Real booking/timeout acceptance remains pending integration.
 
 Shared booking room names use cached metadata with bounded pagination; datasets above 2,000 rooms produce an explicit lookup error and need a revised lookup contract.
 
 ## Work tracking
 
-[RoomBook Jira](https://swe40006-roombook.atlassian.net) tracks acceptance and ownership. This frontend work covers RB-12 and prepares the UI for RB-14, RB-16 and RB-18. Those integration stories require the real backend. Loading, empty, failure, conflict and timeout visuals remain pending visual review where the approved prototype does not demonstrate them. The v1 archive is immutable.
+[RoomBook Jira](https://swe40006-roombook.atlassian.net) tracks acceptance and ownership. RB-12 provides the frontend foundation; RB-14 integrates public room discovery with the real API. RB-16 and RB-18 still require owned booking APIs and identity integration. Loading, empty, failure, conflict and timeout visuals remain pending visual review where the approved prototype does not demonstrate them. The v1 archive is immutable.

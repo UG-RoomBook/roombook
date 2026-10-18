@@ -3,17 +3,19 @@ name: Frontend checks
 on:
   pull_request:
     paths:
-      - 'frontend/**'
-      - 'docs/design/baselines/**'
-      - '.github/workflows/frontend.yml'
-      - '.gitattributes'
+      - "frontend/**"
+      - "backend/openapi.json"
+      - "docs/design/baselines/**"
+      - ".github/workflows/frontend.yml"
+      - ".gitattributes"
   push:
     branches: [main]
     paths:
-      - 'frontend/**'
-      - 'docs/design/baselines/**'
-      - '.github/workflows/frontend.yml'
-      - '.gitattributes'
+      - "frontend/**"
+      - "backend/openapi.json"
+      - "docs/design/baselines/**"
+      - ".github/workflows/frontend.yml"
+      - ".gitattributes"
 
 permissions:
   contents: read

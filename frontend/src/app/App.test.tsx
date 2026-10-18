@@ -6,9 +6,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 import { ThemeProvider } from './ThemeProvider';
 
-const runtime = vi.hoisted(() => ({ available: true }));
+const runtime = vi.hoisted(() => ({ available: true, error: false }));
 vi.mock('@/shared/api/queries', () => ({
   useRuntimeVersion: () => ({
+    isError: runtime.error,
     data: runtime.available
       ? { environment: 'test', commit_sha: 'abc123456789', version: '0.1.0' }
       : undefined,
@@ -70,6 +71,7 @@ function renderApp(path = '/?date=2026-10-19&start=13%3A00&end=14%3A00&capacity=
 
 beforeEach(() => {
   runtime.available = true;
+  runtime.error = false;
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
 });
 
@@ -124,6 +126,13 @@ describe('application shell', () => {
 
   it('does not invent deployment identity when the endpoint is unavailable', () => {
     runtime.available = false;
+    renderApp();
+    expect(screen.getByText('Runtime identity unavailable')).toBeInTheDocument();
+    expect(screen.queryByText(/abc1234/)).not.toBeInTheDocument();
+  });
+
+  it('does not show cached identity after a runtime request fails', () => {
+    runtime.error = true;
     renderApp();
     expect(screen.getByText('Runtime identity unavailable')).toBeInTheDocument();
     expect(screen.queryByText(/abc1234/)).not.toBeInTheDocument();

@@ -4,69 +4,188 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
-export type Room = {
-    id: string;
-    name: string;
-    location: string;
-    capacity: number;
+/**
+ * ErrorBody
+ */
+export type ErrorBody = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Details
+     */
+    details?: Array<ValidationDetail> | null;
+    /**
+     * Message
+     */
+    message: string;
+    /**
+     * Request Id
+     */
+    request_id: string;
+};
+
+/**
+ * ErrorResponse
+ */
+export type ErrorResponse = {
+    error: ErrorBody;
+};
+
+/**
+ * HealthResponse
+ */
+export type HealthResponse = {
+    /**
+     * Status
+     */
+    status?: 'healthy';
+};
+
+/**
+ * ReadinessResponse
+ */
+export type ReadinessResponse = {
+    /**
+     * Status
+     */
+    status?: 'ready';
+};
+
+/**
+ * RoomAvailability
+ */
+export type RoomAvailability = {
+    /**
+     * Active
+     */
     active: boolean;
-    available?: boolean;
-};
-
-export type Booking = {
+    /**
+     * Available
+     */
+    available: boolean;
+    /**
+     * Capacity
+     */
+    capacity: number;
+    /**
+     * Id
+     */
     id: string;
-    room_id: string;
-    starts_at: string;
-    ends_at: string;
-    status: 'active' | 'cancelled';
-    created_at: string;
-    cancelled_at: string | null;
+    /**
+     * Location
+     */
+    location: string;
+    /**
+     * Name
+     */
+    name: string;
 };
 
-export type CreateBooking = {
-    room_id: string;
-    starts_at: string;
-    ends_at: string;
+/**
+ * RoomList
+ */
+export type RoomList = {
+    /**
+     * Items
+     */
+    items: Array<RoomAvailability | RoomRead>;
+    /**
+     * Limit
+     */
+    limit: number;
+    /**
+     * Offset
+     */
+    offset: number;
+    /**
+     * Total
+     */
+    total: number;
 };
 
+/**
+ * RoomRead
+ */
+export type RoomRead = {
+    /**
+     * Active
+     */
+    active: boolean;
+    /**
+     * Capacity
+     */
+    capacity: number;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Location
+     */
+    location: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * RuntimeVersion
+ */
 export type RuntimeVersion = {
+    /**
+     * Commit Sha
+     */
     commit_sha: string;
+    /**
+     * Environment
+     */
     environment: string;
+    /**
+     * Version
+     */
     version: string;
 };
 
-export type ApiErrorResponse = {
-    error: {
-        code: string;
-        message: string;
-        request_id: string;
-        details?: Array<{
-            [key: string]: unknown;
-        }>;
-    };
-};
-
-export type RoomList = {
-    items: Array<Room>;
-    total: number;
-    limit: number;
-    offset: number;
-};
-
-export type BookingList = {
-    items: Array<Booking>;
-    total: number;
-    limit: number;
-    offset: number;
+/**
+ * ValidationDetail
+ */
+export type ValidationDetail = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Field
+     */
+    field: string;
+    /**
+     * Message
+     */
+    message: string;
 };
 
 export type ListRoomsData = {
     body?: never;
     path?: never;
     query?: {
-        starts_at?: string;
-        ends_at?: string;
+        /**
+         * Starts At
+         */
+        starts_at?: string | null;
+        /**
+         * Ends At
+         */
+        ends_at?: string | null;
+        /**
+         * Limit
+         */
         limit?: number;
+        /**
+         * Offset
+         */
         offset?: number;
     };
     url: '/api/v1/rooms';
@@ -74,152 +193,83 @@ export type ListRoomsData = {
 
 export type ListRoomsErrors = {
     /**
-     * Not found
+     * Invalid query parameters
      */
-    404: ApiErrorResponse;
+    422: ErrorResponse;
     /**
-     * Conflict
+     * Unexpected error
      */
-    409: ApiErrorResponse;
+    500: ErrorResponse;
     /**
-     * Invalid input
+     * Database unavailable
      */
-    422: ApiErrorResponse;
-    /**
-     * Unavailable
-     */
-    503: ApiErrorResponse;
+    503: ErrorResponse;
 };
 
 export type ListRoomsError = ListRoomsErrors[keyof ListRoomsErrors];
 
 export type ListRoomsResponses = {
     /**
-     * Success
+     * Successful Response
      */
     200: RoomList;
 };
 
 export type ListRoomsResponse = ListRoomsResponses[keyof ListRoomsResponses];
 
-export type ListBookingsData = {
+export type GetHealthData = {
     body?: never;
     path?: never;
-    query: {
-        from: string;
-        to: string;
-        room_id?: string;
-        limit?: number;
-        offset?: number;
-    };
-    url: '/api/v1/bookings';
+    query?: never;
+    url: '/health';
 };
 
-export type ListBookingsErrors = {
+export type GetHealthErrors = {
     /**
-     * Not found
+     * Unexpected error
      */
-    404: ApiErrorResponse;
-    /**
-     * Conflict
-     */
-    409: ApiErrorResponse;
-    /**
-     * Invalid input
-     */
-    422: ApiErrorResponse;
-    /**
-     * Unavailable
-     */
-    503: ApiErrorResponse;
+    500: ErrorResponse;
 };
 
-export type ListBookingsError = ListBookingsErrors[keyof ListBookingsErrors];
+export type GetHealthError = GetHealthErrors[keyof GetHealthErrors];
 
-export type ListBookingsResponses = {
+export type GetHealthResponses = {
     /**
-     * Success
+     * Successful Response
      */
-    200: BookingList;
+    200: HealthResponse;
 };
 
-export type ListBookingsResponse = ListBookingsResponses[keyof ListBookingsResponses];
+export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
 
-export type CreateBookingData = {
-    body: CreateBooking;
+export type GetReadinessData = {
+    body?: never;
     path?: never;
     query?: never;
-    url: '/api/v1/bookings';
+    url: '/ready';
 };
 
-export type CreateBookingErrors = {
+export type GetReadinessErrors = {
     /**
-     * Not found
+     * Unexpected error
      */
-    404: ApiErrorResponse;
+    500: ErrorResponse;
     /**
-     * Conflict
+     * PostgreSQL is unavailable
      */
-    409: ApiErrorResponse;
-    /**
-     * Invalid input
-     */
-    422: ApiErrorResponse;
-    /**
-     * Unavailable
-     */
-    503: ApiErrorResponse;
+    503: ErrorResponse;
 };
 
-export type CreateBookingError = CreateBookingErrors[keyof CreateBookingErrors];
+export type GetReadinessError = GetReadinessErrors[keyof GetReadinessErrors];
 
-export type CreateBookingResponses = {
+export type GetReadinessResponses = {
     /**
-     * Success
+     * Successful Response
      */
-    201: Booking;
+    200: ReadinessResponse;
 };
 
-export type CreateBookingResponse = CreateBookingResponses[keyof CreateBookingResponses];
-
-export type CancelBookingData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/bookings/{id}/cancel';
-};
-
-export type CancelBookingErrors = {
-    /**
-     * Not found
-     */
-    404: ApiErrorResponse;
-    /**
-     * Conflict
-     */
-    409: ApiErrorResponse;
-    /**
-     * Invalid input
-     */
-    422: ApiErrorResponse;
-    /**
-     * Unavailable
-     */
-    503: ApiErrorResponse;
-};
-
-export type CancelBookingError = CancelBookingErrors[keyof CancelBookingErrors];
-
-export type CancelBookingResponses = {
-    /**
-     * Success
-     */
-    200: Booking;
-};
-
-export type CancelBookingResponse = CancelBookingResponses[keyof CancelBookingResponses];
+export type GetReadinessResponse = GetReadinessResponses[keyof GetReadinessResponses];
 
 export type GetVersionData = {
     body?: never;
@@ -230,28 +280,16 @@ export type GetVersionData = {
 
 export type GetVersionErrors = {
     /**
-     * Not found
+     * Unexpected error
      */
-    404: ApiErrorResponse;
-    /**
-     * Conflict
-     */
-    409: ApiErrorResponse;
-    /**
-     * Invalid input
-     */
-    422: ApiErrorResponse;
-    /**
-     * Unavailable
-     */
-    503: ApiErrorResponse;
+    500: ErrorResponse;
 };
 
 export type GetVersionError = GetVersionErrors[keyof GetVersionErrors];
 
 export type GetVersionResponses = {
     /**
-     * Success
+     * Successful Response
      */
     200: RuntimeVersion;
 };
