@@ -47,20 +47,20 @@ New profiles: skip
 
 To                         Action      From
 --                         ------      ----
-22/tcp                     ALLOW IN    Anywhere                  
-80/tcp                     ALLOW IN    Anywhere                  
-443/tcp                    ALLOW IN    Anywhere                  
-Anywhere                   ALLOW IN    10.42.0.0/16              
-Anywhere                   ALLOW IN    10.43.0.0/16              
-22/tcp (v6)                ALLOW IN    Anywhere (v6)             
-80/tcp (v6)                ALLOW IN    Anywhere (v6)             
-443/tcp (v6)               ALLOW IN    Anywhere (v6)             
+22/tcp                     ALLOW IN    Anywhere
+80/tcp                     ALLOW IN    Anywhere
+443/tcp                    ALLOW IN    Anywhere
+Anywhere                   ALLOW IN    10.42.0.0/16
+Anywhere                   ALLOW IN    10.43.0.0/16
+22/tcp (v6)                ALLOW IN    Anywhere (v6)
+80/tcp (v6)                ALLOW IN    Anywhere (v6)
+443/tcp (v6)               ALLOW IN    Anywhere (v6)
 
-Anywhere                   ALLOW FWD   10.42.0.0/16              
-80/tcp                     ALLOW FWD   Anywhere                  
-443/tcp                    ALLOW FWD   Anywhere                  
-80/tcp (v6)                ALLOW FWD   Anywhere (v6)             
-443/tcp (v6)               ALLOW FWD   Anywhere (v6)             
+Anywhere                   ALLOW FWD   10.42.0.0/16
+80/tcp                     ALLOW FWD   Anywhere
+443/tcp                    ALLOW FWD   Anywhere
+80/tcp (v6)                ALLOW FWD   Anywhere (v6)
+443/tcp (v6)               ALLOW FWD   Anywhere (v6)
 
 active
 active
@@ -72,17 +72,17 @@ Swap:             0B          0B          0B
 Filesystem      Size  Used Avail Use% Mounted on
 /dev/sda1       387G  3.6G  383G   1% /
 State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess
-LISTEN 0      4096         0.0.0.0:22         0.0.0.0:*          
-LISTEN 0      4096   127.0.0.53%lo:53         0.0.0.0:*          
-LISTEN 0      4096       127.0.0.1:6444       0.0.0.0:*          
-LISTEN 0      4096       127.0.0.1:10259      0.0.0.0:*          
-LISTEN 0      4096       127.0.0.1:10258      0.0.0.0:*          
-LISTEN 0      4096       127.0.0.1:10257      0.0.0.0:*          
-LISTEN 0      4096       127.0.0.1:10256      0.0.0.0:*          
-LISTEN 0      4096       127.0.0.1:10249      0.0.0.0:*          
-LISTEN 0      4096       127.0.0.1:10248      0.0.0.0:*          
-LISTEN 0      4096       127.0.0.1:10010      0.0.0.0:*          
-LISTEN 0      4096      127.0.0.54:53         0.0.0.0:*          
-LISTEN 0      4096            [::]:22            [::]:*          
-LISTEN 0      4096               *:6443             *:*          
-LISTEN 0      4096               *:10250            *:*          
+LISTEN 0      4096         0.0.0.0:22         0.0.0.0:*
+LISTEN 0      4096   127.0.0.53%lo:53         0.0.0.0:*
+LISTEN 0      4096       127.0.0.1:6444       0.0.0.0:*
+LISTEN 0      4096       127.0.0.1:10259      0.0.0.0:*
+LISTEN 0      4096       127.0.0.1:10258      0.0.0.0:*
+LISTEN 0      4096       127.0.0.1:10257      0.0.0.0:*
+LISTEN 0      4096       127.0.0.1:10256      0.0.0.0:*
+LISTEN 0      4096       127.0.0.1:10249      0.0.0.0:*
+LISTEN 0      4096       127.0.0.1:10248      0.0.0.0:*
+LISTEN 0      4096       127.0.0.1:10010      0.0.0.0:*
+LISTEN 0      4096      127.0.0.54:53         0.0.0.0:*
+LISTEN 0      4096            [::]:22            [::]:*
+LISTEN 0      4096               *:6443             *:*
+LISTEN 0      4096               *:10250            *:*

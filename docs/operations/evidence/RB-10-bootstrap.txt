@@ -77,20 +77,20 @@ New profiles: skip
 
 To                         Action      From
 --                         ------      ----
-22/tcp                     ALLOW IN    Anywhere                  
-80/tcp                     ALLOW IN    Anywhere                  
-443/tcp                    ALLOW IN    Anywhere                  
-Anywhere                   ALLOW IN    10.42.0.0/16              
-Anywhere                   ALLOW IN    10.43.0.0/16              
-22/tcp (v6)                ALLOW IN    Anywhere (v6)             
-80/tcp (v6)                ALLOW IN    Anywhere (v6)             
-443/tcp (v6)               ALLOW IN    Anywhere (v6)             
+22/tcp                     ALLOW IN    Anywhere
+80/tcp                     ALLOW IN    Anywhere
+443/tcp                    ALLOW IN    Anywhere
+Anywhere                   ALLOW IN    10.42.0.0/16
+Anywhere                   ALLOW IN    10.43.0.0/16
+22/tcp (v6)                ALLOW IN    Anywhere (v6)
+80/tcp (v6)                ALLOW IN    Anywhere (v6)
+443/tcp (v6)               ALLOW IN    Anywhere (v6)
 
-Anywhere                   ALLOW FWD   10.42.0.0/16              
-80/tcp                     ALLOW FWD   Anywhere                  
-443/tcp                    ALLOW FWD   Anywhere                  
-80/tcp (v6)                ALLOW FWD   Anywhere (v6)             
-443/tcp (v6)               ALLOW FWD   Anywhere (v6)             
+Anywhere                   ALLOW FWD   10.42.0.0/16
+80/tcp                     ALLOW FWD   Anywhere
+443/tcp                    ALLOW FWD   Anywhere
+80/tcp (v6)                ALLOW FWD   Anywhere (v6)
+443/tcp (v6)               ALLOW FWD   Anywhere (v6)
 
 K3s foundation installed. Application, database, HTTPS, monitoring and recovery qualification remain in their assigned tickets.
 Created symlink /etc/systemd/system/multi-user.target.wants/k3s.service → /etc/systemd/system/k3s.service.

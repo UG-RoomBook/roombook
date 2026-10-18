@@ -43,7 +43,7 @@ Saad's named administrator access and sudo were verified. The pinned foundation 
 | Existing services | Docker 29.9.1 still active, with no Docker containers listed; SSH login settings unchanged |
 | Idle capacity | About 1.1 GiB RAM used, 4.7 GiB available and 383G root disk free after verification; no load-capacity claim |
 
-Raw evidence: [bootstrap](evidence/RB-10-bootstrap.txt), [host checks](evidence/RB-10-host-checks.txt), [external TCP probes](evidence/RB-10-external-ports.json), [final runtime inventory](evidence/RB-10-runtime.txt).
+Captured evidence: [bootstrap](evidence/RB-10-bootstrap.txt), [host checks](evidence/RB-10-host-checks.txt), [external TCP probes](evidence/RB-10-external-ports.json), [final runtime inventory](evidence/RB-10-runtime.txt). Text logs use LF line endings with trailing whitespace removed.
 
 The temporary listeners proved TCP reachability only. No TLS certificate or Caddy workload was used. Test pods, their allow policies and the temporary listeners were removed; all RoomBook namespaces are empty after verification.
 
