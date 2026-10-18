@@ -1,0 +1,780 @@
+{
+  "schema_version": 1,
+  "baseline": "v1",
+  "approval": {
+    "approved_by": "Saad",
+    "approved_on": "2026-10-18",
+    "scope": [
+      "frontend appearance and behaviour",
+      "light and dark themes",
+      "detailed room SVG illustrations"
+    ],
+    "evidence": "Explicit approval in the RoomBook design conversation, followed by the request to archive this exact source.",
+    "application_implementation": "Not implemented by this archive",
+    "independent_team_review": "Pending PR review",
+    "accessibility_audit": "Not performed; WCAG 2.2 AA is the implementation target"
+  },
+  "source": {
+    "file": "approved-prototype.html",
+    "original_filename": "roombook-final-review.html",
+    "sha256": "E06C135E1AA1EF6DEFB666E874ED995D7ADA1B3FC4714FE7BBD147EE3529F130",
+    "bytes": 47515,
+    "format": "HTML fragment",
+    "preservation": "Unchanged bytes; Git text conversion disabled in this directory"
+  },
+  "preview": {
+    "file": "preview.html",
+    "renderer": "visualize standalone renderer 1.0.50",
+    "python_version": "3.12.14",
+    "source_embedding": "Same fragment text; renderer normalizes line endings to LF",
+    "wrapper_adjustments": [
+      "Outer margin removed; iframe width equals viewport width",
+      "Optional reference/theme query parameters seed fixed preview state"
+    ],
+    "storage": "Normal mode uses localStorage when available; reference mode resets seed state on reload"
+  },
+  "environment": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "platform": "Win32",
+    "language": "en-US",
+    "languages": [
+      "en-US"
+    ],
+    "timezone": "Australia/Sydney",
+    "devicePixelRatio": 1,
+    "capturedAt": "2026-10-18T03:53:35.814Z",
+    "reducedMotion": false,
+    "systemDark": true,
+    "browser": "Chromium-based in-app browser",
+    "browser_version_reported": "155.0.0.0",
+    "exact_browser_build": null,
+    "capture_method": "Browser screenshot API, JPEG, application bounds, device scale 1",
+    "capture_date": "2026-10-18",
+    "animations": "Enabled; captured after settling. Motion is not validated by static references."
+  },
+  "fonts": {
+    "families": [
+      "DM Sans",
+      "Space Grotesk"
+    ],
+    "weights": [
+      400,
+      500,
+      600,
+      700
+    ],
+    "stylesheet": "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap",
+    "font_host": "https://fonts.gstatic.com",
+    "font_loading_status_at_capture": "loaded",
+    "binary_revision_pinned": false,
+    "fallback": "sans-serif"
+  },
+  "dependencies": {
+    "embedded": [
+      "Preview stylesheet",
+      "Standalone state bridge",
+      "Standalone shell runtime",
+      "Inline approved CSS, JavaScript and SVG"
+    ],
+    "external_scripts": [
+      "https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js",
+      "https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js",
+      "https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js"
+    ],
+    "requires_internet_for_external_assets": true,
+    "application_server_required": false,
+    "database_required": false
+  },
+  "sample_data": {
+    "date": "2026-10-19",
+    "start": "13:00",
+    "end": "14:00",
+    "capacity_filter": 1,
+    "date_label_locale": "en-AU",
+    "display_timezone": "Australia/Melbourne",
+    "review_room": "studio",
+    "added_bookings": [],
+    "cancelled_bookings": [],
+    "rooms": [
+      {
+        "id": "studio",
+        "name": "The Studio",
+        "code": "W.01",
+        "capacity": 4,
+        "location": "West building / Level 1"
+      },
+      {
+        "id": "forum",
+        "name": "The Forum",
+        "code": "N.02",
+        "capacity": 8,
+        "location": "North building / Level 2"
+      }
+    ],
+    "seed_bookings": [
+      {
+        "id": "seed-1",
+        "room": "studio",
+        "date": "2026-10-19",
+        "start": "10:00",
+        "end": "11:00"
+      },
+      {
+        "id": "seed-2",
+        "room": "forum",
+        "date": "2026-10-19",
+        "start": "15:00",
+        "end": "16:00"
+      }
+    ]
+  },
+  "capture_procedure": [
+    "1440 px: normal preview navigation, Light/Dark, The Studio review, two unchanged seed bookings",
+    "768 and 390 px: reference query mode, fixed state on each navigation",
+    "Wait for fonts and settled rendering; capture measured application bounds without resizing the image",
+    "Inspect every image; verify dimensions, theme background, width and hashes"
+  ],
+  "known_limitations": [
+    "External fonts are not revision-pinned or vendored; this archive is not a pixel-reproducible CI environment.",
+    "The reduced user agent does not expose the exact browser build.",
+    "JPEG references are for human review, not installed Playwright golden snapshots.",
+    "Native date/time fields and text rasterization vary with browser, locale and OS.",
+    "Inactive pages reserve grid space. Tablet review can increase page height on first use; screenshot heights are not fixed production requirements.",
+    "Some legacy CSS is overridden in the source; use the effective cascade.",
+    "Sample geometry is not a verified campus floor plan.",
+    "Prototype state is local, without production API, database or authentication.",
+    "Loading, empty, error, timeout and concurrent-conflict designs remain pending visual review where not fully demonstrated.",
+    "No accessibility audit, System-change, 200% zoom, motion or full 320-1920 px test matrix is claimed by this archive.",
+    "Interactive capture required browser renderer restarts; final references were captured after successful rendering."
+  ],
+  "screenshots": [
+    {
+      "file": "screenshots/bookings-dark-1440.jpg",
+      "screen": "bookings",
+      "theme": "dark",
+      "width": 1440,
+      "height": 1062,
+      "metrics": {
+        "background": "rgb(18, 18, 18)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 1061.890625,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "sha256": "3062522551A87409C551DD7CBA22D43E483B2EF05E70112D8B8F224E37496851",
+      "viewport_css_px": {
+        "width": 1440,
+        "height": 1700
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 1062
+      },
+      "reference_query": "?reference=bookings&theme=dark"
+    },
+    {
+      "file": "screenshots/bookings-dark-390.jpg",
+      "screen": "bookings",
+      "theme": "dark",
+      "width": 390,
+      "height": 1579,
+      "metrics": {
+        "background": "rgb(18, 18, 18)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 1578.828125,
+        "page": "bookings",
+        "scrollWidth": 390,
+        "width": 390
+      },
+      "sha256": "332A2C9AE24EB70D2BA4D6B88221C2653363DC632F6DFC3A1FEDEC55D2A5AB95",
+      "viewport_css_px": {
+        "width": 390,
+        "height": 1800
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 1579
+      },
+      "reference_query": "?reference=bookings&theme=dark"
+    },
+    {
+      "file": "screenshots/bookings-dark-768.jpg",
+      "screen": "bookings",
+      "theme": "dark",
+      "width": 768,
+      "height": 958,
+      "metrics": {
+        "background": "rgb(18, 18, 18)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 957.140625,
+        "page": "bookings",
+        "scrollWidth": 768,
+        "width": 768
+      },
+      "sha256": "1167DA3824DC15814C2ED7028A10EB39A175F76B046A91AB84241182564621DE",
+      "viewport_css_px": {
+        "width": 768,
+        "height": 1700
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 958
+      },
+      "reference_query": "?reference=bookings&theme=dark"
+    },
+    {
+      "file": "screenshots/bookings-light-1440.jpg",
+      "screen": "bookings",
+      "theme": "light",
+      "width": 1440,
+      "height": 1062,
+      "metrics": {
+        "background": "rgb(244, 243, 239)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 1061.890625,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "sha256": "8942E6100EE182366B24D7A812A5BA0992EAFC46F5C18D5E8B7ECDC9D044BFDA",
+      "viewport_css_px": {
+        "width": 1440,
+        "height": 1700
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 1062
+      },
+      "reference_query": "?reference=bookings&theme=light"
+    },
+    {
+      "file": "screenshots/bookings-light-390.jpg",
+      "screen": "bookings",
+      "theme": "light",
+      "width": 390,
+      "height": 1579,
+      "metrics": {
+        "background": "rgb(244, 243, 239)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 1578.828125,
+        "page": "bookings",
+        "scrollWidth": 390,
+        "width": 390
+      },
+      "sha256": "F5F5E9440A36D39CEE31CBD6838DCD00CDCB7737E1CFF20419B4C8A2E2C4DCD4",
+      "viewport_css_px": {
+        "width": 390,
+        "height": 1800
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 1579
+      },
+      "reference_query": "?reference=bookings&theme=light"
+    },
+    {
+      "file": "screenshots/bookings-light-768.jpg",
+      "screen": "bookings",
+      "theme": "light",
+      "width": 768,
+      "height": 958,
+      "metrics": {
+        "background": "rgb(244, 243, 239)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 957.140625,
+        "page": "bookings",
+        "scrollWidth": 768,
+        "width": 768
+      },
+      "sha256": "CCF0C03C4BCECBBE52C384E6DE7D3B219C97B7A753E1F0F658E437DE89A1241D",
+      "viewport_css_px": {
+        "width": 768,
+        "height": 1700
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 958
+      },
+      "reference_query": "?reference=bookings&theme=light"
+    },
+    {
+      "file": "screenshots/review-dark-1440.jpg",
+      "screen": "review",
+      "theme": "dark",
+      "width": 1440,
+      "height": 1062,
+      "metrics": {
+        "background": "rgb(18, 18, 18)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 1061.890625,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "sha256": "70935B027D6C3DD41057642E51F94C96334B6A6892597EC878D3B3CA69B43FE7",
+      "viewport_css_px": {
+        "width": 1440,
+        "height": 1700
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 1062
+      },
+      "reference_query": "?reference=review&theme=dark"
+    },
+    {
+      "file": "screenshots/review-dark-390.jpg",
+      "screen": "review",
+      "theme": "dark",
+      "width": 390,
+      "height": 1579,
+      "metrics": {
+        "background": "rgb(18, 18, 18)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 1578.828125,
+        "page": "review",
+        "scrollWidth": 390,
+        "width": 390
+      },
+      "sha256": "103B5A8281CC6B98C603DF5FE57013592EC37D84488DD3D2F6281497F4C04E02",
+      "viewport_css_px": {
+        "width": 390,
+        "height": 1800
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 1579
+      },
+      "reference_query": "?reference=review&theme=dark"
+    },
+    {
+      "file": "screenshots/review-dark-768.jpg",
+      "screen": "review",
+      "theme": "dark",
+      "width": 768,
+      "height": 1025,
+      "metrics": {
+        "background": "rgb(18, 18, 18)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 1024.96875,
+        "page": "review",
+        "scrollWidth": 768,
+        "width": 768
+      },
+      "sha256": "5EF5A23CFF113554B6D530DF458EF1FDF6CA341025EB23E2F2B4E7E6C2E47B60",
+      "viewport_css_px": {
+        "width": 768,
+        "height": 1700
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1025
+      },
+      "reference_query": "?reference=review&theme=dark"
+    },
+    {
+      "file": "screenshots/review-light-1440.jpg",
+      "screen": "review",
+      "theme": "light",
+      "width": 1440,
+      "height": 1062,
+      "metrics": {
+        "background": "rgb(244, 243, 239)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 1061.890625,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "sha256": "791F080ABD47765F7922F7B2D7876F87E1CADB71E6912E5211B2CCA3358B00C1",
+      "viewport_css_px": {
+        "width": 1440,
+        "height": 1700
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 1062
+      },
+      "reference_query": "?reference=review&theme=light"
+    },
+    {
+      "file": "screenshots/review-light-390.jpg",
+      "screen": "review",
+      "theme": "light",
+      "width": 390,
+      "height": 1579,
+      "metrics": {
+        "background": "rgb(244, 243, 239)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 1578.828125,
+        "page": "review",
+        "scrollWidth": 390,
+        "width": 390
+      },
+      "sha256": "8BD45520E66BF4E160A9BD255CD07B4D443B267FB339FF089A8274F9D7FDB17C",
+      "viewport_css_px": {
+        "width": 390,
+        "height": 1800
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 1579
+      },
+      "reference_query": "?reference=review&theme=light"
+    },
+    {
+      "file": "screenshots/review-light-768.jpg",
+      "screen": "review",
+      "theme": "light",
+      "width": 768,
+      "height": 1025,
+      "metrics": {
+        "background": "rgb(244, 243, 239)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 1024.96875,
+        "page": "review",
+        "scrollWidth": 768,
+        "width": 768
+      },
+      "sha256": "395E329AFEC937E9BD0CDA3899F6F00D5A0BC8320324E38DA9F9025E3ACEA5F5",
+      "viewport_css_px": {
+        "width": 768,
+        "height": 1700
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1025
+      },
+      "reference_query": "?reference=review&theme=light"
+    },
+    {
+      "file": "screenshots/search-dark-1440.jpg",
+      "screen": "search",
+      "theme": "dark",
+      "width": 1440,
+      "height": 1062,
+      "metrics": {
+        "background": "rgb(18, 18, 18)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 1061.890625,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "sha256": "9F7A6F3F1C2D6C4B0C6CECB219C30E70161789ABC0620C3668307BD7CC85D942",
+      "viewport_css_px": {
+        "width": 1440,
+        "height": 1700
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 1062
+      },
+      "reference_query": "?reference=search&theme=dark"
+    },
+    {
+      "file": "screenshots/search-dark-390.jpg",
+      "screen": "search",
+      "theme": "dark",
+      "width": 390,
+      "height": 1579,
+      "metrics": {
+        "background": "rgb(18, 18, 18)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 1578.828125,
+        "page": "find",
+        "scrollWidth": 390,
+        "width": 390
+      },
+      "sha256": "29770B870B1725723AE662028590F95795514369597CC43566E065514FB3E6F0",
+      "viewport_css_px": {
+        "width": 390,
+        "height": 1800
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 1579
+      },
+      "reference_query": "?reference=search&theme=dark"
+    },
+    {
+      "file": "screenshots/search-dark-768.jpg",
+      "screen": "search",
+      "theme": "dark",
+      "width": 768,
+      "height": 958,
+      "metrics": {
+        "background": "rgb(18, 18, 18)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 957.140625,
+        "page": "find",
+        "scrollWidth": 768,
+        "width": 768
+      },
+      "sha256": "42D802BD26AE65EF072A9CFB3CD0483C64BF36313A2942292E868BA9771108F3",
+      "viewport_css_px": {
+        "width": 768,
+        "height": 1700
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 958
+      },
+      "reference_query": "?reference=search&theme=dark"
+    },
+    {
+      "file": "screenshots/search-light-1440.jpg",
+      "screen": "search",
+      "theme": "light",
+      "width": 1440,
+      "height": 1062,
+      "metrics": {
+        "background": "rgb(244, 243, 239)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 1061.890625,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "sha256": "7B893166DB61256564C76937F884FB371C0F6B9A2BE0DE54A176E672A54C2F15",
+      "viewport_css_px": {
+        "width": 1440,
+        "height": 1700
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 1062
+      },
+      "reference_query": "?reference=search&theme=light"
+    },
+    {
+      "file": "screenshots/search-light-390.jpg",
+      "screen": "search",
+      "theme": "light",
+      "width": 390,
+      "height": 1579,
+      "metrics": {
+        "background": "rgb(244, 243, 239)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 1578.828125,
+        "page": "find",
+        "scrollWidth": 390,
+        "width": 390
+      },
+      "sha256": "426E274614FD5430B65E86E5BBF44A5CB09776E375E4D086BFD646E26811ACF2",
+      "viewport_css_px": {
+        "width": 390,
+        "height": 1800
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 1579
+      },
+      "reference_query": "?reference=search&theme=light"
+    },
+    {
+      "file": "screenshots/search-light-768.jpg",
+      "screen": "search",
+      "theme": "light",
+      "width": 768,
+      "height": 958,
+      "metrics": {
+        "background": "rgb(244, 243, 239)",
+        "bodyFont": "\"DM Sans\", sans-serif",
+        "fonts": "loaded",
+        "heading": "\"Space Grotesk\", sans-serif",
+        "height": 957.140625,
+        "page": "find",
+        "scrollWidth": 768,
+        "width": 768
+      },
+      "sha256": "0755A33D60132E34D94CD721887AFEC9F746F27942077B3AC3E9C6EFC6D6BE7A",
+      "viewport_css_px": {
+        "width": 768,
+        "height": 1700
+      },
+      "capture_rectangle_css_px": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 958
+      },
+      "reference_query": "?reference=search&theme=light"
+    }
+  ],
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 85,
+      "sha256": "BC2F30BB4BD60CD5606540CE92908146A131B863410C1AD31990A79E56232271"
+    },
+    {
+      "path": "approved-prototype.html",
+      "bytes": 47515,
+      "sha256": "E06C135E1AA1EF6DEFB666E874ED995D7ADA1B3FC4714FE7BBD147EE3529F130"
+    },
+    {
+      "path": "preview.html",
+      "bytes": 138028,
+      "sha256": "2321C1760539D0D466518D3AC98EEAB69B5466B11831829915BAA0385D0FB6A5"
+    },
+    {
+      "path": "README.md",
+      "bytes": 6847,
+      "sha256": "560C922B40DEC423BE6609BAA7EF9D542867D8021B54A7DF68A346677DD8E94A"
+    },
+    {
+      "path": "screenshots/bookings-dark-1440.jpg",
+      "bytes": 44232,
+      "sha256": "3062522551A87409C551DD7CBA22D43E483B2EF05E70112D8B8F224E37496851"
+    },
+    {
+      "path": "screenshots/bookings-dark-390.jpg",
+      "bytes": 30940,
+      "sha256": "332A2C9AE24EB70D2BA4D6B88221C2653363DC632F6DFC3A1FEDEC55D2A5AB95"
+    },
+    {
+      "path": "screenshots/bookings-dark-768.jpg",
+      "bytes": 34355,
+      "sha256": "1167DA3824DC15814C2ED7028A10EB39A175F76B046A91AB84241182564621DE"
+    },
+    {
+      "path": "screenshots/bookings-light-1440.jpg",
+      "bytes": 44431,
+      "sha256": "8942E6100EE182366B24D7A812A5BA0992EAFC46F5C18D5E8B7ECDC9D044BFDA"
+    },
+    {
+      "path": "screenshots/bookings-light-390.jpg",
+      "bytes": 31053,
+      "sha256": "F5F5E9440A36D39CEE31CBD6838DCD00CDCB7737E1CFF20419B4C8A2E2C4DCD4"
+    },
+    {
+      "path": "screenshots/bookings-light-768.jpg",
+      "bytes": 35116,
+      "sha256": "CCF0C03C4BCECBBE52C384E6DE7D3B219C97B7A753E1F0F658E437DE89A1241D"
+    },
+    {
+      "path": "screenshots/review-dark-1440.jpg",
+      "bytes": 63927,
+      "sha256": "70935B027D6C3DD41057642E51F94C96334B6A6892597EC878D3B3CA69B43FE7"
+    },
+    {
+      "path": "screenshots/review-dark-390.jpg",
+      "bytes": 41107,
+      "sha256": "103B5A8281CC6B98C603DF5FE57013592EC37D84488DD3D2F6281497F4C04E02"
+    },
+    {
+      "path": "screenshots/review-dark-768.jpg",
+      "bytes": 53641,
+      "sha256": "5EF5A23CFF113554B6D530DF458EF1FDF6CA341025EB23E2F2B4E7E6C2E47B60"
+    },
+    {
+      "path": "screenshots/review-light-1440.jpg",
+      "bytes": 64221,
+      "sha256": "791F080ABD47765F7922F7B2D7876F87E1CADB71E6912E5211B2CCA3358B00C1"
+    },
+    {
+      "path": "screenshots/review-light-390.jpg",
+      "bytes": 41494,
+      "sha256": "8BD45520E66BF4E160A9BD255CD07B4D443B267FB339FF089A8274F9D7FDB17C"
+    },
+    {
+      "path": "screenshots/review-light-768.jpg",
+      "bytes": 54126,
+      "sha256": "395E329AFEC937E9BD0CDA3899F6F00D5A0BC8320324E38DA9F9025E3ACEA5F5"
+    },
+    {
+      "path": "screenshots/search-dark-1440.jpg",
+      "bytes": 96731,
+      "sha256": "9F7A6F3F1C2D6C4B0C6CECB219C30E70161789ABC0620C3668307BD7CC85D942"
+    },
+    {
+      "path": "screenshots/search-dark-390.jpg",
+      "bytes": 66669,
+      "sha256": "29770B870B1725723AE662028590F95795514369597CC43566E065514FB3E6F0"
+    },
+    {
+      "path": "screenshots/search-dark-768.jpg",
+      "bytes": 66422,
+      "sha256": "42D802BD26AE65EF072A9CFB3CD0483C64BF36313A2942292E868BA9771108F3"
+    },
+    {
+      "path": "screenshots/search-light-1440.jpg",
+      "bytes": 96924,
+      "sha256": "7B893166DB61256564C76937F884FB371C0F6B9A2BE0DE54A176E672A54C2F15"
+    },
+    {
+      "path": "screenshots/search-light-390.jpg",
+      "bytes": 67095,
+      "sha256": "426E274614FD5430B65E86E5BBF44A5CB09776E375E4D086BFD646E26811ACF2"
+    },
+    {
+      "path": "screenshots/search-light-768.jpg",
+      "bytes": 67583,
+      "sha256": "0755A33D60132E34D94CD721887AFEC9F746F27942077B3AC3E9C6EFC6D6BE7A"
+    }
+  ]
+}
