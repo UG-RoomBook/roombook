@@ -1,0 +1,6 @@
+dist
+coverage
+node_modules
+src/shared/api/generated
+public/mockServiceWorker.js
+package-lock.json

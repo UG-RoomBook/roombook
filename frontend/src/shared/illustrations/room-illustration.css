@@ -1,0 +1,91 @@
+#rb-swinburne .sw-visual {
+  --art-bg: light-dark(#eae6df, #20262d);
+  --wall-front: light-dark(#f6f2e9, #4e5963);
+  --wall-side: light-dark(#d9d2c4, #36434e);
+  --wall-edge: light-dark(#c5bcac, #75818b);
+  --floor: light-dark(#dcd2c1, #39414a);
+  --floor-edge: light-dark(#baae98, #222c36);
+  --rug: light-dark(#b3b2a4, #52616b);
+  --rug-line: light-dark(#c8c6b9, #687680);
+  --glass-top: light-dark(#a7c8cf, #1c344b);
+  --glass-bottom: light-dark(#e4ece1, #497182);
+  --window-frame: light-dark(#e9e7de, #a2adb3);
+  --window-shadow: light-dark(#b6b5ab, #293742);
+  --wood-top: light-dark(#cfaa7a, #bb956c);
+  --wood-end: light-dark(#b78659, #996a45);
+  --wood-side: light-dark(#916749, #634b38);
+  --metal: light-dark(#555a5b, #a6b1b5);
+  --seat-top: light-dark(#e43e32, #f06759);
+  --seat-bottom: light-dark(#bb241f, #c83630);
+  --seat-side: light-dark(#8e2925, #852824);
+  --board: light-dark(#fafaf2, #c6d0ce);
+  --board-line: light-dark(#809391, #6b8285);
+  --leaf: light-dark(#547450, #77a383);
+  --leaf-dark: light-dark(#314e3c, #446d57);
+  --pot: light-dark(#bc8a66, #b38668);
+  --pot-dark: light-dark(#916a50, #775740);
+  --shadow-ink: light-dark(#514c40, #070e15);
+  --sun: light-dark(#fff7d6, #95cce5);
+  --lamp: light-dark(#fff4cf, #ffdba0);
+  --lamp-case: light-dark(#444d50, #c0c7c7);
+  --screen: light-dark(#3c626e, #405e6e);
+  --paper: light-dark(#f7f5e9, #d8ded8);
+  --book: light-dark(#63837e, #9bb3ad);
+  background: var(--art-bg);
+  height: auto;
+  aspect-ratio: 16/9;
+  min-height: 180px;
+  perspective: none;
+}
+#rb-swinburne .sw-visual.alt {
+  --art-bg: light-dark(#e4e8e9, #1d2730);
+  --wall-front: light-dark(#eef1ee, #465967);
+  --wall-side: light-dark(#cbd3d2, #31424e);
+  --floor: light-dark(#d2d7d1, #344650);
+  --wood-top: light-dark(#d1bf9f, #b3a388);
+  --wood-end: light-dark(#b8a181, #958268);
+  background: var(--art-bg);
+}
+#rb-swinburne svg.sw-room-art {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+  transform-origin: 50% 65%;
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+#rb-swinburne .sw-room-art * {
+  transition:
+    fill 0.32s ease,
+    stroke 0.32s ease,
+    stop-color 0.32s ease,
+    opacity 0.32s ease;
+}
+#rb-swinburne .sw-room:hover .sw-room-art,
+#rb-swinburne .sw-room:focus-within .sw-room-art {
+  transform: translateY(-2px) scale(1.025);
+}
+#rb-swinburne .sw-review .sw-visual {
+  height: auto;
+  min-height: 180px;
+  align-self: start;
+  aspect-ratio: 16/9;
+}
+#rb-swinburne .sw-room-art .art-daylight {
+  fill: light-dark(#fff7d68c, #95cce51f);
+}
+#rb-swinburne .sw-room-art .art-lamplight {
+  opacity: 0.3;
+}
+#rb-swinburne .sw-number {
+  font-size: 11px;
+  top: 13px;
+  left: 15px;
+  color: var(--sub);
+}
+@media (prefers-reduced-motion: reduce) {
+  #rb-swinburne .sw-room:hover .sw-room-art,
+  #rb-swinburne .sw-room:focus-within .sw-room-art {
+    transform: none;
+  }
+}
