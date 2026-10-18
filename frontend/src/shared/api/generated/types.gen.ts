@@ -34,6 +34,16 @@ export type ErrorResponse = {
 };
 
 /**
+ * HTTPValidationError
+ */
+export type HttpValidationError = {
+    /**
+     * Detail
+     */
+    detail?: Array<ValidationError>;
+};
+
+/**
  * HealthResponse
  */
 export type HealthResponse = {
@@ -150,6 +160,43 @@ export type RuntimeVersion = {
 };
 
 /**
+ * SessionResponse
+ */
+export type SessionResponse = {
+    /**
+     * Aal
+     */
+    aal: 'aal1' | 'aal2';
+    /**
+     * Csrf Token
+     */
+    csrf_token: string;
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Purpose
+     */
+    purpose?: 'standard';
+    user: SessionUser;
+};
+
+/**
+ * SessionUser
+ */
+export type SessionUser = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Role
+     */
+    role: 'Member' | 'Admin';
+};
+
+/**
  * ValidationDetail
  */
 export type ValidationDetail = {
@@ -166,6 +213,122 @@ export type ValidationDetail = {
      */
     message: string;
 };
+
+/**
+ * ValidationError
+ */
+export type ValidationError = {
+    /**
+     * Context
+     */
+    ctx?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Input
+     */
+    input?: unknown;
+    /**
+     * Location
+     */
+    loc: Array<string | number>;
+    /**
+     * Message
+     */
+    msg: string;
+    /**
+     * Error Type
+     */
+    type: string;
+};
+
+export type LogoutCurrentSessionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Origin
+         *
+         * Exact configured RoomBook application origin.
+         */
+        Origin?: string | null;
+        /**
+         * X-Csrf-Token
+         *
+         * CSRF value from the current session.
+         */
+        'X-CSRF-Token'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/logout';
+};
+
+export type LogoutCurrentSessionErrors = {
+    /**
+     * Origin or CSRF check failed
+     */
+    403: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Account service unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type LogoutCurrentSessionError = LogoutCurrentSessionErrors[keyof LogoutCurrentSessionErrors];
+
+export type LogoutCurrentSessionResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type LogoutCurrentSessionResponse = LogoutCurrentSessionResponses[keyof LogoutCurrentSessionResponses];
+
+export type GetCurrentSessionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/session';
+};
+
+export type GetCurrentSessionErrors = {
+    /**
+     * Sign-in required
+     */
+    401: ErrorResponse;
+    /**
+     * Restricted or inactive account
+     */
+    403: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Account service unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type GetCurrentSessionError = GetCurrentSessionErrors[keyof GetCurrentSessionErrors];
+
+export type GetCurrentSessionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SessionResponse;
+};
+
+export type GetCurrentSessionResponse = GetCurrentSessionResponses[keyof GetCurrentSessionResponses];
 
 export type ListRoomsData = {
     body?: never;

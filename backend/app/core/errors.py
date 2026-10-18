@@ -79,11 +79,25 @@ def error_response(
             details=details,
         )
     )
-    return JSONResponse(
+    response = JSONResponse(
         status_code=status_code,
         content=body.model_dump(mode="json", exclude_none=True),
         headers={**(headers or {}), "X-Request-ID": str(request_id)},
     )
+    if request.url.path == "/api/v1/auth" or request.url.path.startswith("/api/v1/auth/"):
+        response.headers["Cache-Control"] = "private, no-store"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Pragma"] = "no-cache"
+        if status_code == 401:
+            settings = request.app.state.settings
+            response.delete_cookie(
+                key=settings.auth_cookie_name,
+                secure=settings.auth_cookie_secure,
+                httponly=True,
+                samesite="lax",
+                path="/",
+            )
+    return response
 
 
 def _validation_detail(error: dict[str, Any]) -> ValidationDetail:

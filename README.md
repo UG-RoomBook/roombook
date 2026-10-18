@@ -43,6 +43,13 @@ Room search keeps applied filters and pagination in the URL. Group size filters 
 
 ## Backend checks
 
+RB-45 adds application identity mapping and server-side session foundations. See the
+[session setup and operations guide](docs/backend/RB-45-sessions.md) for environment
+settings, expiry, refresh, revocation and migration behaviour. Authentication is disabled
+until configured. The implemented auth routes read the current session and log it out;
+registration/login/recovery and their screens remain under RB-46. The approved frontend
+appearance and public room discovery are unchanged.
+
 Run from `backend/`, explicitly selecting the isolated test database in PowerShell before the checks:
 
 ```powershell

@@ -20,6 +20,7 @@ def schema_text() -> str:
         environment="schema-export",
         version=Settings.model_fields["version"].default,
         commit_sha="unknown",
+        auth_enabled=False,
     )
     return json.dumps(create_app(settings).openapi(), indent=2, sort_keys=True) + "\n"
 
