@@ -2,6 +2,8 @@
 
 Study-room search, booking and cancellation. The [engineering wiki](https://github.com/UG-RoomBook/wiki) records the application architecture and delivery plan. The [approved design archive](docs/design/baselines/v1/README.md) remains the visual reference.
 
+The [K3s hosting foundation](deploy/kubernetes/README.md) records the Contabo environment setup. Its [verification record](docs/operations/RB-10-verification.md) separates local checks from remaining VPS and operational work.
+
 ## Local frontend
 
 Use the Node/npm versions recorded in `frontend/package.json` and install from the committed lockfile.
