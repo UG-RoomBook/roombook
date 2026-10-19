@@ -166,6 +166,27 @@ class SupabaseProvider:
         if self._owns_client:
             self._client.close()
 
+    def account_request(
+        self, method: str, path: str, payload: dict[str, str], access: str | None = None
+    ) -> dict[str, object]:
+        allowed = {
+            ("POST", "/signup"),
+            ("POST", "/recover"),
+            ("POST", "/resend"),
+            ("POST", "/token?grant_type=password"),
+            ("POST", "/verify"),
+            ("PUT", "/user"),
+        }
+        if (method, path) not in allowed:
+            raise ValueError("Unsupported account operation.")
+        return self._request_json(
+            method,
+            path,
+            payload=payload,
+            authorization=access,
+            invalid_statuses=(400, 401, 403, 404, 422),
+        )
+
     def _identity(self, claims: dict[str, object]) -> VerifiedIdentity:
         subject = claims["sub"]
         session_id = claims["session_id"]

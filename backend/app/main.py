@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from app.core.config import Settings
 from app.core.errors import ErrorResponse, install_error_handlers
 from app.db.session import Database
+from app.modules.identity.account_router import router as account_router
 from app.modules.identity.crypto import TokenCipher
 from app.modules.identity.provider import SupabaseProvider
 from app.modules.identity.router import router as identity_router
@@ -61,12 +62,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.state.settings = configured
     application.state.database = database
     application.state.identity_sessions = identity_sessions
+    application.state.identity_provider = provider
     application.state.identity_cipher = cipher
     install_error_handlers(application)
     install_identity_http_policy(application)
     application.include_router(operations_router)
     application.include_router(rooms_router)
     application.include_router(identity_router)
+    application.include_router(account_router)
     return application
 
 

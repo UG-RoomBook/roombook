@@ -4,6 +4,7 @@ import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { FindRoomPage } from '@/features/rooms/FindRoomPage';
 import { ReviewBookingPage } from '@/features/bookings/ReviewBookingPage';
 import { BookingsPage } from '@/features/bookings/BookingsPage';
+import { AccountNavigation, AccountPage } from '@/features/accounts/AccountPage';
 import { useRuntimeVersion } from '@/shared/api/queries';
 import { AppearanceControl } from './AppearanceControl';
 
@@ -40,7 +41,7 @@ export function App() {
       mainRef.current?.querySelector('h1')?.focus({ preventScroll: true });
       previousPath.current = location.pathname;
     }
-    document.title = `${location.pathname.startsWith('/bookings') ? 'Bookings' : location.pathname.startsWith('/review') ? 'Review booking' : 'Find a room'} | RoomBook`;
+    document.title = `${location.pathname.startsWith('/account') ? 'Account' : location.pathname.startsWith('/bookings') ? 'Bookings' : location.pathname.startsWith('/review') ? 'Review booking' : 'Find a room'} | RoomBook`;
   }, [location.pathname, location.search]);
 
   return (
@@ -68,6 +69,7 @@ export function App() {
               <CalendarDays aria-hidden="true" />
               Bookings
             </Link>
+            <AccountNavigation />
           </nav>
         </aside>
         <div className="sw-workspace">
@@ -75,7 +77,7 @@ export function App() {
             <div className="sw-breadcrumb">
               <span>Campus</span>
               <span aria-hidden="true">/</span>
-              <strong>Rooms</strong>
+              <strong>{location.pathname.startsWith('/account') ? 'Account' : 'Rooms'}</strong>
             </div>
             <AppearanceControl />
           </header>
@@ -85,6 +87,7 @@ export function App() {
                 <Route path="/" element={<FindRoomPage />} />
                 <Route path="/review" element={<ReviewBookingPage />} />
                 <Route path="/bookings" element={<BookingsPage />} />
+                <Route path="/account/*" element={<AccountPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>

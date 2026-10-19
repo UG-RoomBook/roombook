@@ -2,6 +2,10 @@
 
 Implementation owner: Saad. Independent reviewer: Daniel.
 
+This document records the RB-45 foundation. The dependent RB-46 change now implements
+the account entry points and screens described as follow-up work below; see the
+[account setup guide](RB-46-accounts.md) for the current callback and API contract.
+
 Follows [ADR-008](https://github.com/UG-RoomBook/wiki/blob/4e0fdbd440d8ac755e7e57ac97fb73aebb51abd6/decisions/ADR-008-hosted-identity-and-email.md).
 Supabase.com manages identity credentials; the existing application PostgreSQL owns
 users, roles and browser sessions. There is no Supabase browser SDK or public
