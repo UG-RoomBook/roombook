@@ -1,5 +1,7 @@
 # RoomBook Kubernetes foundation
 
+Status: Historical foundation; superseded for delivery by [ADR-012](https://github.com/UG-RoomBook/wiki/blob/main/decisions/ADR-012-restore-submitted-aws-pipeline.md) on 19 October 2026. The current baseline uses three EC2 roles, Docker Compose and self-hosted GitHub Actions runners. The installation and follow-up instructions below describe the earlier Contabo plan and are retained for traceability; new delivery work follows ADR-012. Merging this directory does not authorize a deployment or adopt the separate Proposed AWS/GitOps alternative.
+
 RB-10 prepares the host and namespace boundaries from [ADR-010](https://github.com/UG-RoomBook/wiki/pull/12). This foundation does not deploy an application, database, public proxy or monitoring stack. Existing tickets retain their implementers and acceptance checks.
 
 ## Layout

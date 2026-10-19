@@ -2,7 +2,7 @@
 
 Study-room search, booking and cancellation. The [engineering wiki](https://github.com/UG-RoomBook/wiki) records the application architecture and delivery plan. The [approved design archive](docs/design/baselines/v1/README.md) remains the visual reference.
 
-The [K3s hosting foundation](deploy/kubernetes/README.md) records the Contabo environment setup. Its [verification record](docs/operations/RB-10-verification.md) separates local checks from remaining VPS and operational work.
+The current delivery baseline is the [submitted AWS plan restored by ADR-012](https://github.com/UG-RoomBook/wiki/blob/main/decisions/ADR-012-restore-submitted-aws-pipeline.md): three EC2 roles, Docker Compose and self-hosted GitHub Actions runners. The [K3s hosting foundation](deploy/kubernetes/README.md) and its [verification record](docs/operations/RB-10-verification.md) preserve the earlier Contabo work as historical evidence; they do not define the current deployment plan.
 
 ## Local frontend
 

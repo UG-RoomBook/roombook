@@ -1,5 +1,7 @@
 # RB-10 hosting foundation
 
+Status as of 19 October 2026: Historical Contabo evidence. [ADR-012](https://github.com/UG-RoomBook/wiki/blob/main/decisions/ADR-012-restore-submitted-aws-pipeline.md) restores the submitted AWS/Compose delivery baseline. The observations below remain evidence of the earlier foundation only; they do not verify AWS hosts or the current pipeline. Independent inventory/review and the replacement AWS work remain pending.
+
 Prepared on 18 October 2026. Hosting decisions are in [wiki PR 12](https://github.com/UG-RoomBook/wiki/pull/12). See [deployment instructions](../../deploy/kubernetes/README.md) for boundaries and follow-up work.
 
 ## Observed VPS
