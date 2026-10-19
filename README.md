@@ -45,10 +45,14 @@ Room search keeps applied filters and pagination in the URL. Group size filters 
 
 RB-45 adds application identity mapping and server-side session foundations. See the
 [session setup and operations guide](docs/backend/RB-45-sessions.md) for environment
-settings, expiry, refresh, revocation and migration behaviour. Authentication is disabled
-until configured. The implemented auth routes read the current session and log it out;
-registration/login/recovery and their screens remain under RB-46. The approved frontend
-appearance and public room discovery are unchanged.
+settings, expiry, refresh, revocation and migration behaviour. RB-46 adds registration,
+verification/resend, login/logout, password recovery and email change through FastAPI,
+with account screens at `/account`. Authentication remains disabled until configured.
+Use the [account setup guide](docs/backend/RB-46-accounts.md) to configure the exact
+email templates and same-origin callback, then follow the
+[account verification record](docs/backend/RB-46-verification.md). Live Staging mail
+and independent acceptance remain pending under RB-46/RB-48. Public discovery remains
+available without a session.
 
 Run from `backend/`, explicitly selecting the isolated test database in PowerShell before the checks:
 
