@@ -55,6 +55,24 @@ human review or teammate completion.
 
 ## Remaining acceptance
 
+### Follow-up review, 19 October 2026
+
+Reviewed the provider/JWKS checks, identity and session transactions, refresh leases,
+cookie/CSRF boundaries, private HTTP responses and migration guards against PR head
+`3d7109f`. Found that a development/test configuration could disable Secure cookies
+for a remote HTTPS application origin, contrary to the documented loopback-only
+exception. The validator now requires an explicit localhost, IPv4 loopback or IPv6
+loopback origin as well as development/test mode. Five additional regression cases
+cover remote-origin rejection and allowed loopback origins.
+
+Linux verification with Python 3.12.14 and the isolated local PostgreSQL test
+database: **294 backend tests passed**, with the existing 95.12% combined coverage
+result. Ruff lint/format and strict mypy passed. The local development database
+required the additive `0002` migration before the separate Alembic drift check;
+test fixtures had already applied it to the isolated test database. No provider
+or server deployment evidence is implied. Independent teammate acceptance remains
+pending. RB-46 continues on a dependent branch so this PR can retain its review.
+
 - Daniel independently reviews the PR and performs the relevant acceptance checks.
 - RB-46 adds credential/OTP entry, browser session issuance, registration/recovery/
   email-change screens and account-specific abuse controls.

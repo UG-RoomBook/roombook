@@ -83,8 +83,10 @@ class Settings(BaseSettings):
             development and site.hostname in {"localhost", "127.0.0.1", "::1"}
         ):
             raise ValueError("The application requires HTTPS outside loopback development")
-        if not self.auth_cookie_secure and not development:
-            raise ValueError("Insecure session cookies are limited to development and test")
+        if not self.auth_cookie_secure and not (
+            development and site.hostname in {"localhost", "127.0.0.1", "::1"}
+        ):
+            raise ValueError("Insecure session cookies require loopback development or test")
         return self
 
     @property

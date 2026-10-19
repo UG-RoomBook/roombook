@@ -40,6 +40,9 @@ def test_enabled_identity_requires_all_settings() -> None:
         {"auth_site_url": "https://roombook.example:wrong"},
         {"auth_site_url": "https://roombook.example\n"},
         {"environment": "production", "auth_cookie_secure": False},
+        {"environment": "development", "auth_cookie_secure": False},
+        {"environment": "test", "auth_cookie_secure": False},
+        {"auth_site_url": "https://127.0.0.1.example", "auth_cookie_secure": False},
         {"environment": "staging", "auth_site_url": "http://localhost"},
         {"auth_site_url": "http://public.example"},
         {"auth_idle_seconds": 1800, "auth_absolute_seconds": 600},
@@ -57,6 +60,13 @@ def test_explicit_loopback_http_development_is_supported() -> None:
     )
     assert settings.auth_site_url == "http://127.0.0.1:5174"
     assert settings.auth_cookie_name == "roombook_session"
+
+
+@pytest.mark.parametrize("origin", ["http://localhost:5173", "http://[::1]:5173"])
+def test_other_explicit_loopback_origins_are_supported(origin: str) -> None:
+    assert (
+        enabled_settings(auth_site_url=origin, auth_cookie_secure=False).auth_cookie_secure is False
+    )
 
 
 def test_secret_settings_are_not_in_repr() -> None:
