@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetHealthData, GetHealthErrors, GetHealthResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ListRoomsData, ListRoomsErrors, ListRoomsResponses } from './types.gen';
+import type { GetCurrentSessionData, GetCurrentSessionErrors, GetCurrentSessionResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ListRoomsData, ListRoomsErrors, ListRoomsResponses, LogoutCurrentSessionData, LogoutCurrentSessionErrors, LogoutCurrentSessionResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -17,6 +17,32 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+/**
+ * Logout
+ */
+export const logoutCurrentSession = <ThrowOnError extends boolean = false>(options?: Options<LogoutCurrentSessionData, ThrowOnError>): RequestResult<LogoutCurrentSessionResponses, LogoutCurrentSessionErrors, ThrowOnError> => (options?.client ?? client).post<LogoutCurrentSessionResponses, LogoutCurrentSessionErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/auth/logout',
+    ...options
+});
+
+/**
+ * Current Session
+ */
+export const getCurrentSession = <ThrowOnError extends boolean = false>(options?: Options<GetCurrentSessionData, ThrowOnError>): RequestResult<GetCurrentSessionResponses, GetCurrentSessionErrors, ThrowOnError> => (options?.client ?? client).get<GetCurrentSessionResponses, GetCurrentSessionErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/auth/session',
+    ...options
+});
 
 /**
  * Get Rooms

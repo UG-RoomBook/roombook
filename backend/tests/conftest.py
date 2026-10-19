@@ -39,12 +39,22 @@ def db_engine(database_url: str) -> Iterator[Engine]:
 @pytest.fixture
 def clean_database(db_engine: Engine) -> Iterator[None]:
     with db_engine.begin() as connection:
-        connection.execute(text("TRUNCATE TABLE bookings, rooms"))
+        connection.execute(
+            text(
+                "TRUNCATE TABLE auth_sessions, audit_events, external_identities, "
+                "application_users, bookings, rooms"
+            )
+        )
     try:
         yield
     finally:
         with db_engine.begin() as connection:
-            connection.execute(text("TRUNCATE TABLE bookings, rooms"))
+            connection.execute(
+                text(
+                    "TRUNCATE TABLE auth_sessions, audit_events, external_identities, "
+                    "application_users, bookings, rooms"
+                )
+            )
 
 
 @pytest.fixture

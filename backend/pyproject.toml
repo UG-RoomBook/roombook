@@ -5,16 +5,18 @@ description = "RoomBook API"
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "alembic==1.20.0",
+  "cryptography==50.0.2",
   "fastapi==0.143.3",
+  "httpx==0.28.1",
   "psycopg[binary]==3.3.6",
   "pydantic-settings==2.16.0",
+  "pyjwt==2.15.1",
   "sqlalchemy==2.1.5",
   "uvicorn==0.54.0",
 ]
 
 [dependency-groups]
 dev = [
-  "httpx==0.28.1",
   "mypy==2.4.0",
   "pytest==9.1.1",
   "pytest-cov==7.1.0",

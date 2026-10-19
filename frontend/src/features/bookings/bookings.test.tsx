@@ -213,7 +213,9 @@ describe('booking review', () => {
     await user.click(await screen.findByRole('button', { name: 'Confirm booking' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Booking outcome not confirmed');
     expect(screen.getByRole('alert')).toHaveTextContent('The request may have completed.');
-    expect(screen.getByTestId('location')).toHaveTextContent('outcome=unknown');
+    await waitFor(() =>
+      expect(screen.getByTestId('location')).toHaveTextContent('outcome=unknown'),
+    );
     expect(screen.queryByRole('button', { name: 'Confirm booking' })).not.toBeInTheDocument();
     expect(postCount).toBe(1);
     await user.click(screen.getByRole('button', { name: 'Check bookings' }));

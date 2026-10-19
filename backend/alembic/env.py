@@ -4,6 +4,7 @@ from alembic import context
 from app.core.config import Settings
 from app.db.base import Base
 from app.modules.bookings.models import Booking  # noqa: F401
+from app.modules.identity.models import ApplicationUser, AuditEvent, AuthSession, ExternalIdentity  # noqa: F401
 from app.modules.rooms.models import Room  # noqa: F401
 
 target_metadata = Base.metadata
