@@ -41,7 +41,8 @@ def clean_database(db_engine: Engine) -> Iterator[None]:
     with db_engine.begin() as connection:
         connection.execute(
             text(
-                "TRUNCATE TABLE auth_sessions, audit_events, external_identities, "
+                "TRUNCATE TABLE account_attempts, auth_sessions, audit_events, "
+                "external_identities, "
                 "application_users, bookings, rooms"
             )
         )
@@ -51,7 +52,8 @@ def clean_database(db_engine: Engine) -> Iterator[None]:
         with db_engine.begin() as connection:
             connection.execute(
                 text(
-                    "TRUNCATE TABLE auth_sessions, audit_events, external_identities, "
+                    "TRUNCATE TABLE account_attempts, auth_sessions, audit_events, "
+                    "external_identities, "
                     "application_users, bookings, rooms"
                 )
             )

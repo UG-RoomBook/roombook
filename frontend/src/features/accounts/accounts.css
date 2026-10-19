@@ -1,0 +1,68 @@
+#rb-swinburne .sw-account {
+  padding-block: 12px;
+}
+#rb-swinburne .sw-account h1 {
+  margin-bottom: 28px;
+}
+#rb-swinburne .sw-account-panel {
+  width: 100%;
+  max-width: 500px;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+#rb-swinburne .sw-account-panel form,
+#rb-swinburne .sw-account-panel label {
+  display: grid;
+  gap: 10px;
+}
+#rb-swinburne .sw-account-panel form {
+  gap: 22px;
+}
+#rb-swinburne .sw-account-panel label {
+  font-size: 14px;
+  font-weight: 600;
+}
+#rb-swinburne .sw-account-panel input {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 16px;
+}
+#rb-swinburne .sw-account-panel p {
+  margin: 0 0 20px;
+}
+#rb-swinburne .sw-account-panel [role='alert'] {
+  color: var(--red);
+}
+#rb-swinburne .sw-account-panel a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-right: 16px;
+}
+#rb-swinburne .sw-account-links {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+#rb-swinburne .sw-account-message {
+  padding: 14px;
+  background: var(--soft);
+  border-radius: 7px;
+}
+@media (max-width: 520px) {
+  #rb-swinburne .sw-account-panel {
+    padding: 18px;
+  }
+}

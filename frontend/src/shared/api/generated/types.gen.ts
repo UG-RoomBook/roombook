@@ -5,6 +5,34 @@ export type ClientOptions = {
 };
 
 /**
+ * Body_confirmAccountEmail
+ */
+export type BodyConfirmAccountEmail = {
+    /**
+     * Csrf
+     */
+    csrf: string;
+    /**
+     * Token Hash
+     */
+    token_hash: string;
+    /**
+     * Type
+     */
+    type: 'email' | 'signup' | 'recovery' | 'email_change';
+};
+
+/**
+ * EmailInput
+ */
+export type EmailInput = {
+    /**
+     * Email
+     */
+    email: string;
+};
+
+/**
  * ErrorBody
  */
 export type ErrorBody = {
@@ -54,6 +82,40 @@ export type HealthResponse = {
 };
 
 /**
+ * LoginInput
+ */
+export type LoginInput = {
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Password
+     */
+    password: string;
+};
+
+/**
+ * MessageResponse
+ */
+export type MessageResponse = {
+    /**
+     * Message
+     */
+    message: string;
+};
+
+/**
+ * PasswordInput
+ */
+export type PasswordInput = {
+    /**
+     * Password
+     */
+    password: string;
+};
+
+/**
  * ReadinessResponse
  */
 export type ReadinessResponse = {
@@ -61,6 +123,30 @@ export type ReadinessResponse = {
      * Status
      */
     status?: 'ready';
+};
+
+/**
+ * RecoveryResponse
+ */
+export type RecoveryResponse = {
+    /**
+     * Csrf Token
+     */
+    csrf_token: string;
+};
+
+/**
+ * RegisterInput
+ */
+export type RegisterInput = {
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Password
+     */
+    password: string;
 };
 
 /**
@@ -242,6 +328,202 @@ export type ValidationError = {
     type: string;
 };
 
+export type ChangeAccountEmailData = {
+    body: EmailInput;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/change-email';
+};
+
+export type ChangeAccountEmailErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type ChangeAccountEmailError = ChangeAccountEmailErrors[keyof ChangeAccountEmailErrors];
+
+export type ChangeAccountEmailResponses = {
+    /**
+     * Successful Response
+     */
+    200: MessageResponse;
+};
+
+export type ChangeAccountEmailResponse = ChangeAccountEmailResponses[keyof ChangeAccountEmailResponses];
+
+export type ShowAccountConfirmationData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Token Hash
+         */
+        token_hash: string;
+        /**
+         * Type
+         */
+        type: 'email' | 'signup' | 'recovery' | 'email_change';
+    };
+    url: '/api/v1/auth/confirm';
+};
+
+export type ShowAccountConfirmationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type ShowAccountConfirmationError = ShowAccountConfirmationErrors[keyof ShowAccountConfirmationErrors];
+
+export type ShowAccountConfirmationResponses = {
+    /**
+     * Successful Response
+     */
+    200: string;
+};
+
+export type ShowAccountConfirmationResponse = ShowAccountConfirmationResponses[keyof ShowAccountConfirmationResponses];
+
+export type ConfirmAccountEmailData = {
+    body: BodyConfirmAccountEmail;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/confirm';
+};
+
+export type ConfirmAccountEmailErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type ConfirmAccountEmailError = ConfirmAccountEmailErrors[keyof ConfirmAccountEmailErrors];
+
+export type LoginAccountData = {
+    body: LoginInput;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/login';
+};
+
+export type LoginAccountErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type LoginAccountError = LoginAccountErrors[keyof LoginAccountErrors];
+
+export type LoginAccountResponses = {
+    /**
+     * Successful Response
+     */
+    200: SessionResponse;
+};
+
+export type LoginAccountResponse = LoginAccountResponses[keyof LoginAccountResponses];
+
 export type LogoutCurrentSessionData = {
     body?: never;
     headers?: {
@@ -292,6 +574,247 @@ export type LogoutCurrentSessionResponses = {
 };
 
 export type LogoutCurrentSessionResponse = LogoutCurrentSessionResponses[keyof LogoutCurrentSessionResponses];
+
+export type RequestAccountRecoveryData = {
+    body: EmailInput;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/recover';
+};
+
+export type RequestAccountRecoveryErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type RequestAccountRecoveryError = RequestAccountRecoveryErrors[keyof RequestAccountRecoveryErrors];
+
+export type RequestAccountRecoveryResponses = {
+    /**
+     * Successful Response
+     */
+    200: MessageResponse;
+};
+
+export type RequestAccountRecoveryResponse = RequestAccountRecoveryResponses[keyof RequestAccountRecoveryResponses];
+
+export type GetRecoverySessionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/recovery-session';
+};
+
+export type GetRecoverySessionErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type GetRecoverySessionError = GetRecoverySessionErrors[keyof GetRecoverySessionErrors];
+
+export type GetRecoverySessionResponses = {
+    /**
+     * Successful Response
+     */
+    200: RecoveryResponse;
+};
+
+export type GetRecoverySessionResponse = GetRecoverySessionResponses[keyof GetRecoverySessionResponses];
+
+export type RegisterAccountData = {
+    body: RegisterInput;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/register';
+};
+
+export type RegisterAccountErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type RegisterAccountError = RegisterAccountErrors[keyof RegisterAccountErrors];
+
+export type RegisterAccountResponses = {
+    /**
+     * Successful Response
+     */
+    200: MessageResponse;
+};
+
+export type RegisterAccountResponse = RegisterAccountResponses[keyof RegisterAccountResponses];
+
+export type ResendAccountVerificationData = {
+    body: EmailInput;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/resend';
+};
+
+export type ResendAccountVerificationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type ResendAccountVerificationError = ResendAccountVerificationErrors[keyof ResendAccountVerificationErrors];
+
+export type ResendAccountVerificationResponses = {
+    /**
+     * Successful Response
+     */
+    200: MessageResponse;
+};
+
+export type ResendAccountVerificationResponse = ResendAccountVerificationResponses[keyof ResendAccountVerificationResponses];
+
+export type ResetAccountPasswordData = {
+    body: PasswordInput;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/reset-password';
+};
+
+export type ResetAccountPasswordErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type ResetAccountPasswordError = ResetAccountPasswordErrors[keyof ResetAccountPasswordErrors];
+
+export type ResetAccountPasswordResponses = {
+    /**
+     * Successful Response
+     */
+    200: MessageResponse;
+};
+
+export type ResetAccountPasswordResponse = ResetAccountPasswordResponses[keyof ResetAccountPasswordResponses];
 
 export type GetCurrentSessionData = {
     body?: never;
