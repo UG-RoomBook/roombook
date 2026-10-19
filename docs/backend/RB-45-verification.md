@@ -73,6 +73,13 @@ test fixtures had already applied it to the isolated test database. No provider
 or server deployment evidence is implied. Independent teammate acceptance remains
 pending. RB-46 continues on a dependent branch so this PR can retain its review.
 
+The follow-up GitHub frontend run exposed an existing asynchronous test race:
+the timeout message can render before React Router commits its `outcome=unknown`
+URL. The assertion now waits for that observable navigation without changing the
+booking behaviour, adding a sleep or retrying the booking operation. The failed
+run is [39234501462](https://github.com/UG-RoomBook/roombook/actions/runs/39234501462);
+the corrected head requires a fresh green frontend run before merge.
+
 - Daniel independently reviews the PR and performs the relevant acceptance checks.
 - RB-46 adds credential/OTP entry, browser session issuance, registration/recovery/
   email-change screens and account-specific abuse controls.
