@@ -1,0 +1,12 @@
+node-name: roombook-vps
+write-kubeconfig-mode: "0600"
+secrets-encryption: true
+disable:
+  - traefik
+  - local-storage
+cluster-cidr: 10.42.0.0/16
+service-cidr: 10.43.0.0/16
+kubelet-arg:
+  - "container-log-max-size=10Mi"
+  - "container-log-max-files=3"
+  - "eviction-hard=memory.available<512Mi,nodefs.available<15%,imagefs.available<15%"

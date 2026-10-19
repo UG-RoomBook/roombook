@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: runtime-budget
+spec:
+  hard:
+    requests.cpu: 500m
+    limits.cpu: 500m
+    requests.memory: 512Mi
+    limits.memory: 1024Mi

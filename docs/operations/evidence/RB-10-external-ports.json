@@ -1,0 +1,114 @@
+{
+  "checked_at_utc": "2026-10-18T11:25:17.527762+00:00",
+  "origin": "Windows workstation outside the VPS",
+  "probes": [
+    {
+      "family": "IPv4",
+      "address": "154.26.157.138",
+      "port": 22,
+      "result": "connected"
+    },
+    {
+      "family": "IPv4",
+      "address": "154.26.157.138",
+      "port": 80,
+      "result": "connected"
+    },
+    {
+      "family": "IPv4",
+      "address": "154.26.157.138",
+      "port": 443,
+      "result": "connected"
+    },
+    {
+      "family": "IPv4",
+      "address": "154.26.157.138",
+      "port": 6443,
+      "result": "TimeoutError: timed out"
+    },
+    {
+      "family": "IPv4",
+      "address": "154.26.157.138",
+      "port": 10250,
+      "result": "TimeoutError: timed out"
+    },
+    {
+      "family": "IPv4",
+      "address": "154.26.157.138",
+      "port": 5432,
+      "result": "TimeoutError: timed out"
+    },
+    {
+      "family": "IPv4",
+      "address": "154.26.157.138",
+      "port": 9090,
+      "result": "TimeoutError: timed out"
+    },
+    {
+      "family": "IPv4",
+      "address": "154.26.157.138",
+      "port": 3000,
+      "result": "TimeoutError: timed out"
+    },
+    {
+      "family": "IPv4",
+      "address": "154.26.157.138",
+      "port": 30080,
+      "result": "TimeoutError: timed out"
+    },
+    {
+      "family": "IPv6",
+      "address": "2407:3641:2231:1000::1",
+      "port": 22,
+      "result": "connected"
+    },
+    {
+      "family": "IPv6",
+      "address": "2407:3641:2231:1000::1",
+      "port": 80,
+      "result": "connected"
+    },
+    {
+      "family": "IPv6",
+      "address": "2407:3641:2231:1000::1",
+      "port": 443,
+      "result": "connected"
+    },
+    {
+      "family": "IPv6",
+      "address": "2407:3641:2231:1000::1",
+      "port": 6443,
+      "result": "TimeoutError: timed out"
+    },
+    {
+      "family": "IPv6",
+      "address": "2407:3641:2231:1000::1",
+      "port": 10250,
+      "result": "TimeoutError: timed out"
+    },
+    {
+      "family": "IPv6",
+      "address": "2407:3641:2231:1000::1",
+      "port": 5432,
+      "result": "TimeoutError: timed out"
+    },
+    {
+      "family": "IPv6",
+      "address": "2407:3641:2231:1000::1",
+      "port": 9090,
+      "result": "TimeoutError: timed out"
+    },
+    {
+      "family": "IPv6",
+      "address": "2407:3641:2231:1000::1",
+      "port": 3000,
+      "result": "TimeoutError: timed out"
+    },
+    {
+      "family": "IPv6",
+      "address": "2407:3641:2231:1000::1",
+      "port": 30080,
+      "result": "TimeoutError: timed out"
+    }
+  ]
+}
