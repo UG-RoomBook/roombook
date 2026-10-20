@@ -246,6 +246,11 @@ jobs:
           curl -fsS "$base/ready" | jq -e '.status == "ready"'
           curl -fsS "$base/version" | jq -e --arg sha "$GITHUB_SHA" '.commit_sha == $sha and .environment == "testing"'
           curl -fsS "$base/api/v1/rooms" | jq -e '.total >= 2'
+          # RB-51 policy: a future start within 14 days, on a 15-minute boundary,
+          # 30 minutes to 2 hours long. 02:00Z tomorrow is midday in Melbourne.
+          day=$(date -u -d tomorrow +%F)
+          curl -fsS "$base/api/v1/rooms?starts_at=${day}T02%3A00%3A00Z&ends_at=${day}T03%3A00%3A00Z" \
+            | jq -e '[.items[].available] | all(type == "boolean")'
 
       - name: Backend unit and integration tests (real PostgreSQL)
         run: |
