@@ -1,0 +1,50 @@
+# Production only: settings for Grafana and Alertmanager (deploy/monitoring).
+
+- name: Read the Grafana administrator password
+  ansible.builtin.slurp:
+    src: /etc/roombook/secrets/grafana-admin-password
+  register: runtime_grafana_password
+  no_log: true
+
+- name: Read the Discord alert webhook from SSM Parameter Store
+  ansible.builtin.command:
+    argv:
+      - "{{ aws_cli }}"
+      - ssm
+      - get-parameter
+      - --region
+      - "{{ aws_region }}"
+      - --name
+      - /roombook/production/discord-webhook-url
+      - --with-decryption
+      - --query
+      - Parameter.Value
+      - --output
+      - text
+  register: runtime_discord_webhook
+  changed_when: false
+  failed_when: false
+  no_log: true
+
+- name: Write the monitoring environment file
+  ansible.builtin.copy:
+    dest: /etc/roombook/monitoring.env
+    owner: root
+    group: "{{ roombook_group }}"
+    mode: "0640"
+    content: |
+      # Managed by Ansible. Used by deploy/compose/monitoring.yml.
+      GF_SECURITY_ADMIN_USER=admin
+      GF_SECURITY_ADMIN_PASSWORD={{ runtime_grafana_password.content | b64decode | trim }}
+  no_log: true
+
+- name: Write the Discord webhook for Alertmanager
+  ansible.builtin.copy:
+    dest: /etc/roombook/alertmanager-discord-url
+    owner: root
+    group: "{{ roombook_group }}"
+    mode: "0640"
+    # Until the webhook parameter exists, alerts are routed nowhere useful;
+    # Alertmanager still loads and the alert rules stay visible in Prometheus.
+    content: "{{ runtime_discord_webhook.stdout | trim if runtime_discord_webhook.rc == 0 else 'https://discord.invalid/webhook-not-configured' }}\n"
+  no_log: true

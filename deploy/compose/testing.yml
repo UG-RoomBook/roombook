@@ -1,0 +1,35 @@
+# Disposable Testing stack on the Test host. The candidate pipeline starts one
+# per run as project rb-test-<run id>, runs every suite against it, then removes
+# it with its data (`down --volumes`). Nothing here is persistent or secret.
+#
+#   ROOMBOOK_IMAGE  the candidate image, pinned by digest
+#   TEST_PORT       loopback port for the candidate (unique per run)
+
+services:
+  db:
+    image: postgres:17.11@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
+    environment:
+      POSTGRES_USER: roombook
+      POSTGRES_PASSWORD: roombook-testing
+      POSTGRES_DB: roombook
+    volumes:
+      # Also creates roombook_test for the backend suite (tests refuse any
+      # database whose name does not end in _test).
+      - ../../scripts/dev/init-test-db.sql:/docker-entrypoint-initdb.d/10-test-db.sql:ro
+    tmpfs: [/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roombook -d roombook"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  app:
+    image: "${ROOMBOOK_IMAGE:?candidate image}"
+    environment:
+      ROOMBOOK_ENVIRONMENT: testing
+      ROOMBOOK_DATABASE_URL: postgresql+psycopg://roombook:roombook-testing@db:5432/roombook
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${TEST_PORT:?loopback port}:8000"

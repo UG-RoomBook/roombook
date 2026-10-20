@@ -1,0 +1,41 @@
+#!/bin/bash
+# First-boot bootstrap for the RoomBook ${role} host (rendered by Terraform).
+set -euo pipefail
+exec > >(tee -a /var/log/roombook-bootstrap.log) 2>&1
+
+install -d -m 0755 /etc/roombook
+cat > /etc/roombook/bootstrap.env <<'ENV'
+ROOMBOOK_ROLE=${role}
+AWS_REGION=${region}
+OPS_BUCKET=${ops_bucket}
+GITHUB_REPOSITORY=${repository}
+ENV
+
+# Re-runnable entry point: fetch the current Ansible bundle from S3 and apply
+# it to this host. infra/scripts/configure-hosts.ps1 calls it through SSM.
+cat > /usr/local/sbin/roombook-configure <<'SCRIPT'
+#!/bin/bash
+set -euo pipefail
+. /etc/roombook/bootstrap.env
+export DEBIAN_FRONTEND=noninteractive
+
+if ! command -v ansible-playbook >/dev/null || ! command -v unzip >/dev/null; then
+  apt-get update -q
+  apt-get install -yq ansible-core unzip
+fi
+if ! command -v aws >/dev/null; then
+  snap install aws-cli --classic
+fi
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+aws s3 cp "s3://$OPS_BUCKET/ansible/ansible.zip" "$work/ansible.zip" --region "$AWS_REGION" --only-show-errors
+unzip -q "$work/ansible.zip" -d "$work/ansible"
+cd "$work/ansible"
+ansible-playbook -i localhost, -c local site.yml \
+  -e "host_role=$ROOMBOOK_ROLE" -e "aws_region=$AWS_REGION" \
+  -e "ops_bucket=$OPS_BUCKET" -e "github_repository=$GITHUB_REPOSITORY" "$@"
+SCRIPT
+chmod 0755 /usr/local/sbin/roombook-configure
+
+/usr/local/sbin/roombook-configure

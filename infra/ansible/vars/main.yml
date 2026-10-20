@@ -1,0 +1,22 @@
+# Pinned versions and shared settings for every host.
+
+# GitHub Actions runner (the runner self-updates after registration).
+runner_version: "2.338.0"
+runner_sha256: "af4b794c1bc41d73d40535e3fe092a39f9679cd8d965954c2aca25a05ca41d32"
+runner_home: /opt/actions-runner
+runner_user: runner
+# Written by infra/scripts/register-runners.ps1 and deleted again afterwards.
+runner_token_parameter: /roombook/github/runner-token
+
+# Monitoring agents on every host, scraped privately by Prometheus on Production.
+node_exporter_image: "prom/node-exporter:v1.12.1@sha256:1b4e4438faca4dd7e001dd445d161a4a2091b0fededa84093b3a8dfeae1f1be0"
+cadvisor_image: "ghcr.io/google/cadvisor:v0.60.6"
+
+# Which persistent environment each web host serves.
+environments_by_role:
+  test: [staging]
+  production: [production]
+
+roombook_group: roombook
+aws_cli: /snap/bin/aws
+swap_size_mb: 2048

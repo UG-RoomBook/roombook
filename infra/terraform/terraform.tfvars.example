@@ -1,0 +1,11 @@
+# Copy to terraform.tfvars (ignored by Git) and adjust. Every value is optional.
+
+# Leave both empty to start with <elastic-ip>.sslip.io hostnames. Once the
+# zenora.dev A records point at the Elastic IPs, set them and apply again.
+# staging_host    = "roombook-staging.zenora.dev"
+# production_host = "roombook.zenora.dev"
+
+# CloudWatch host alarms (confirm the subscription email AWS sends).
+# alert_email = "you@example.com"
+
+# instance_types = { ci = "t3.medium", test = "t3.medium", production = "t3.medium" }

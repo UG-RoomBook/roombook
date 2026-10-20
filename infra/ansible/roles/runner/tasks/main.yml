@@ -1,0 +1,149 @@
+# Self-hosted GitHub Actions runner per ADR-012, labelled with the host role
+# (ci, test or production). It polls GitHub over outbound HTTPS, so the host
+# needs no inbound port. Workflows select a host with `runs-on: <role>`.
+#
+# Registration needs a one-hour token from the repository settings. Run
+# infra/scripts/register-runners.ps1, which stores it in SSM Parameter Store,
+# re-applies this role on all hosts, then deletes the parameter again.
+
+- name: Let the runner use Docker
+  ansible.builtin.user:
+    name: "{{ runner_user }}"
+    groups: [docker]
+    append: true
+
+- name: Create the runner directory
+  ansible.builtin.file:
+    path: "{{ runner_home }}"
+    state: directory
+    owner: "{{ runner_user }}"
+    group: "{{ runner_user }}"
+    mode: "0755"
+
+- name: Check the installed runner version
+  ansible.builtin.slurp:
+    src: "{{ runner_home }}/.installed-version"
+  register: runner_installed
+  failed_when: false
+
+- name: Download the runner
+  ansible.builtin.get_url:
+    url: "https://github.com/actions/runner/releases/download/v{{ runner_version }}/actions-runner-linux-x64-{{ runner_version }}.tar.gz"
+    dest: /tmp/actions-runner-{{ runner_version }}.tar.gz
+    checksum: "sha256:{{ runner_sha256 }}"
+    mode: "0644"
+  when: (runner_installed.content | default('') | b64decode | trim) != runner_version
+
+- name: Unpack the runner
+  ansible.builtin.unarchive:
+    src: /tmp/actions-runner-{{ runner_version }}.tar.gz
+    dest: "{{ runner_home }}"
+    remote_src: true
+    owner: "{{ runner_user }}"
+    group: "{{ runner_user }}"
+  when: (runner_installed.content | default('') | b64decode | trim) != runner_version
+
+- name: Install the runner's system dependencies
+  ansible.builtin.command:
+    cmd: ./bin/installdependencies.sh
+    chdir: "{{ runner_home }}"
+  when: (runner_installed.content | default('') | b64decode | trim) != runner_version
+  changed_when: true
+
+- name: Record the installed runner version
+  ansible.builtin.copy:
+    dest: "{{ runner_home }}/.installed-version"
+    content: "{{ runner_version }}\n"
+    owner: "{{ runner_user }}"
+    group: "{{ runner_user }}"
+    mode: "0644"
+
+- name: Put the AWS CLI and Docker on the runner's PATH
+  ansible.builtin.copy:
+    dest: "{{ runner_home }}/.path"
+    content: "/snap/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n"
+    owner: "{{ runner_user }}"
+    group: "{{ runner_user }}"
+    mode: "0644"
+
+- name: Check whether this runner is registered
+  ansible.builtin.stat:
+    path: "{{ runner_home }}/.runner"
+  register: runner_registered
+
+- name: Fetch the one-time registration token
+  ansible.builtin.command:
+    argv:
+      - "{{ aws_cli }}"
+      - ssm
+      - get-parameter
+      - --region
+      - "{{ aws_region }}"
+      - --name
+      - "{{ runner_token_parameter }}"
+      - --with-decryption
+      - --query
+      - Parameter.Value
+      - --output
+      - text
+  register: runner_token
+  changed_when: false
+  failed_when: false
+  no_log: true
+  when: not runner_registered.stat.exists
+
+- name: Register the runner with GitHub
+  ansible.builtin.command:
+    argv:
+      - ./config.sh
+      - --unattended
+      - --replace
+      - --url
+      - "https://github.com/{{ github_repository }}"
+      - --token
+      - "{{ runner_token.stdout | trim }}"
+      - --name
+      - "roombook-{{ host_role }}"
+      - --labels
+      - "{{ host_role }}"
+      - --work
+      - _work
+    chdir: "{{ runner_home }}"
+  become: true
+  become_user: "{{ runner_user }}"
+  no_log: true
+  when:
+    - not runner_registered.stat.exists
+    - runner_token.rc | default(1) == 0
+    - (runner_token.stdout | default('') | trim) | length > 0
+  register: runner_config
+  changed_when: true
+
+- name: Check whether the runner service is installed
+  ansible.builtin.stat:
+    path: "{{ runner_home }}/.service"
+  register: runner_service
+
+- name: Install the runner as a service
+  ansible.builtin.command:
+    cmd: ./svc.sh install {{ runner_user }}
+    chdir: "{{ runner_home }}"
+  when:
+    - not runner_service.stat.exists
+    - runner_registered.stat.exists or (runner_config is changed)
+  changed_when: true
+
+- name: Start the runner service
+  ansible.builtin.command:
+    cmd: ./svc.sh start
+    chdir: "{{ runner_home }}"
+  when: runner_registered.stat.exists or (runner_config is changed)
+  register: runner_start
+  changed_when: "'active (running)' not in runner_start.stdout"
+
+- name: Report registration status
+  ansible.builtin.debug:
+    msg: >-
+      {{ 'Runner roombook-' ~ host_role ~ ' is registered.'
+         if (runner_registered.stat.exists or runner_config is changed)
+         else 'Runner not registered yet: run infra/scripts/register-runners.ps1.' }}

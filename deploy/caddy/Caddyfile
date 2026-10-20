@@ -1,0 +1,29 @@
+# One site per host: Staging on the Test host, Production on the Production
+# host. SITE_HOST comes from /etc/roombook/site.env (a zenora.dev name, or an
+# <elastic-ip>.sslip.io name until DNS is ready). Caddy obtains and renews the
+# certificate automatically and redirects HTTP to HTTPS.
+{$SITE_HOST} {
+	encode zstd gzip
+
+	# Metrics are for Prometheus on the private network only.
+	@metrics path /metrics /metrics/*
+	respond @metrics 404
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		X-Frame-Options "DENY"
+		-Server
+	}
+
+	reverse_proxy app:8000 {
+		health_uri /health
+		health_interval 10s
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

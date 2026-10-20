@@ -1,0 +1,87 @@
+name: Infrastructure checks
+
+# Static checks for the delivery code itself, on GitHub-hosted runners with no
+# cloud credentials: Terraform formatting and validation, Ansible lint, shell
+# scripts, workflow syntax, Compose files, and an infrastructure security scan.
+# `terraform plan/apply` stay with an operator holding a Learner Lab session.
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - "deploy/**"
+      - "tests/e2e/**"
+      - ".github/workflows/**"
+      - ".github/actionlint.yaml"
+  push:
+    branches: [main]
+    paths:
+      - "infra/**"
+      - "deploy/**"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TERRAFORM_IMAGE: hashicorp/terraform:1.16.5@sha256:c7926feace05d0f7e73542842bf3945924e955a1f782cf000ccbb8d18fa42d77
+  SHELLCHECK_IMAGE: koalaman/shellcheck:v0.11.0@sha256:61862eba1fcf09a484ebcc6feea46f1782532571a34ed51fedf90dd25f925a8d
+  ACTIONLINT_IMAGE: rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+  PYTHON_IMAGE: python:3.12.14-slim@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f
+  TRIVY_IMAGE: aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa
+
+jobs:
+  checks:
+    name: Terraform, Ansible, scripts, workflows and Compose
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Terraform format
+        run: docker run --rm -v "$PWD:/w" -w /w/infra/terraform "$TERRAFORM_IMAGE" fmt -check -recursive -diff
+
+      - name: Terraform validate (no backend, no credentials)
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w/infra/terraform -e TF_IN_AUTOMATION=1 "$TERRAFORM_IMAGE" init -backend=false -input=false >/dev/null
+          docker run --rm -v "$PWD:/w" -w /w/infra/terraform -e TF_IN_AUTOMATION=1 "$TERRAFORM_IMAGE" validate
+
+      - name: Ansible lint (production profile)
+        run: |
+          docker run --rm -v "$PWD/infra/ansible:/w" -w /w "$PYTHON_IMAGE" sh -c \
+            'pip install --quiet --disable-pip-version-check "ansible-core==2.16.*" "ansible-lint==26.10.1" \
+             && ansible-playbook -i localhost, -c local site.yml --syntax-check -e host_role=test \
+             && ansible-lint --offline site.yml'
+
+      - name: ShellCheck deployment scripts
+        run: docker run --rm -v "$PWD:/w" -w /w "$SHELLCHECK_IMAGE" deploy/scripts/deploy.sh deploy/scripts/backup.sh deploy/scripts/restore-drill.sh infra/scripts/bootstrap.sh
+
+      - name: Workflow syntax
+        run: docker run --rm -v "$PWD:/repo" -w /repo "$ACTIONLINT_IMAGE" -color
+
+      - name: Compose files
+        run: |
+          printf 'SITE_HOST=example.test\n' > "$RUNNER_TEMP/site.env"
+          printf 'POSTGRES_PASSWORD=x\n' > "$RUNNER_TEMP/app.env"
+          ROOMBOOK_IMAGE=ghcr.io/example/roombook@sha256:0000000000000000000000000000000000000000000000000000000000000000 \
+          ROOMBOOK_ENV_FILE="$RUNNER_TEMP/app.env" \
+            docker compose -f deploy/compose/stack.yml --env-file "$RUNNER_TEMP/site.env" config --quiet
+          ROOMBOOK_IMAGE=example TEST_PORT=20001 docker compose -f deploy/compose/testing.yml config --quiet
+          docker network create roombook-production_backend >/dev/null
+          sudo install -d /etc/roombook && sudo touch /etc/roombook/monitoring.env /etc/roombook/alertmanager-discord-url
+          docker compose -f deploy/compose/monitoring.yml config --quiet
+          docker run --rm -v "$PWD/deploy/monitoring/prometheus:/p" --entrypoint promtool \
+            prom/prometheus:v3.15.0@sha256:efd719c99d83b060d9daefdcf00360461adf279f45ef5391f8d111892118753e \
+            check config /p/prometheus.yml
+          docker run --rm -v "$PWD/deploy/caddy:/c" caddy:2.11.7@sha256:685ae3d7c34d9b5f8caeddc5d14051db7bbd88ff1f5a2fa0c16bd8ca328fb7af \
+            sh -c 'SITE_HOST=example.test caddy validate --config /c/Caddyfile --adapter caddyfile'
+
+      # Report only: some findings are deliberate (public 80/443 for the
+      # website, all outbound traffic for GitHub, GHCR and apt). Review the
+      # table in each run; anything unexpected becomes a fix or a recorded exception.
+      - name: Infrastructure security scan (report)
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w "$TRIVY_IMAGE" config --quiet --severity HIGH,CRITICAL \
+            --skip-dirs deploy/kubernetes --exit-code 0 .

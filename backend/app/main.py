@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from app.core.config import Settings
 from app.core.errors import ErrorResponse, install_error_handlers
 from app.core.frontend import install_frontend
+from app.core.metrics import install_metrics
 from app.db.session import Database
 from app.modules.identity.account_router import router as account_router
 from app.modules.identity.crypto import TokenCipher
@@ -67,6 +68,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.state.identity_cipher = cipher
     install_error_handlers(application)
     install_identity_http_policy(application)
+    install_metrics(application, configured)
     application.include_router(operations_router)
     application.include_router(rooms_router)
     application.include_router(identity_router)

@@ -1,0 +1,11 @@
+# Context for Dockerfile.test
+.venv/
+**/__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+coverage.xml
+junit.xml
+.coverage
+.env

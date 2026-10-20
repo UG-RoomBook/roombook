@@ -1,14 +1,31 @@
 name: Candidate pipeline
 
-# Push to main (or run manually):
-#   1. backend and frontend checks (the same workflows that gate pull requests)
-#   2. build ONE application image on GitHub-hosted CI, smoke-test it, scan it
-#      for bundled secrets, publish it to GHCR as sha-<7 chars>, record the digest
-#   3. test that exact digest against a disposable PostgreSQL (Testing)
-# Staging and Production deployment attach after test-candidate (see docs/ci/pipeline.md).
+# ADR-012 delivery path. Every push to main (or a manual run):
+#
+#   checks     backend and frontend checks (same workflows that gate PRs)
+#   build      CI server (runner `ci`): build ONE image, smoke-test, scan for
+#              secrets and vulnerabilities, SBOM, publish to GHCR by digest
+#   test       Test server (runner `test`): disposable Testing stack with that
+#              exact digest; backend unit + integration, frontend unit, and
+#              browser journeys against the real system
+#   staging    Test server: deploy the same digest to Staging, verify over
+#              HTTPS, run the browser journeys again, record a validated
+#              release manifest
+#   production only when repository variable PROD_AUTO_PROMOTE is "true"
+#              (automatic mode); otherwise run "Release to Production" by hand
+#              with this run's ID (deferred mode)
+#
+# Repository variable RUNNER_MODE=hosted runs build and test on GitHub-hosted
+# machines instead (used only before the EC2 runners exist; staging needs them).
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "deploy/monitoring/**"
+      - "deploy/compose/monitoring.yml"
+      - "infra/**"
   workflow_dispatch:
 
 permissions:
@@ -17,6 +34,10 @@ permissions:
 concurrency:
   group: candidate-${{ github.ref }}
   cancel-in-progress: false
+
+env:
+  TRIVY_IMAGE: aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa
+  SYFT_IMAGE: anchore/syft:v1.54.1@sha256:3eb5379ba7b409c3f4069b686110527af0c47df993fa5c10d13e7cf34f49b1aa
 
 jobs:
   backend-checks:
@@ -28,10 +49,10 @@ jobs:
     uses: ./.github/workflows/frontend.yml
 
   build:
-    name: Build, verify and publish image
+    name: Build, scan and publish image (CI server)
     needs: [backend-checks, frontend-checks]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    runs-on: ${{ vars.RUNNER_MODE == 'hosted' && 'ubuntu-24.04' || 'ci' }}
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
@@ -53,6 +74,8 @@ jobs:
             echo "image=ghcr.io/${owner}/roombook:sha-${GITHUB_SHA::7}"
             echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           } >> "$GITHUB_OUTPUT"
+          # Per-job Docker credentials, never left in the runner's home directory.
+          echo "DOCKER_CONFIG=$RUNNER_TEMP/docker-config" >> "$GITHUB_ENV"
 
       - name: Build the image once
         env:
@@ -73,21 +96,22 @@ jobs:
         env:
           IMAGE: ${{ steps.meta.outputs.image }}
         run: |
-          docker run -d --name candidate -p 127.0.0.1:8000:8000 \
-            -e ROOMBOOK_ENVIRONMENT=ci "$IMAGE"
-          for _ in $(seq 1 30); do
-            curl -fsS http://127.0.0.1:8000/health >/dev/null 2>&1 && break
-            sleep 1
-          done
+          name="smoke-${GITHUB_RUN_ID}"
+          echo "SMOKE_CONTAINER=$name" >> "$GITHUB_ENV"
+          docker run -d --name "$name" -p 127.0.0.1::8000 -e ROOMBOOK_ENVIRONMENT=ci "$IMAGE"
+          port=$(docker port "$name" 8000/tcp | head -1 | cut -d: -f2)
+          base="http://127.0.0.1:$port"
+          for _ in $(seq 1 30); do curl -fsS "$base/health" >/dev/null 2>&1 && break; sleep 1; done
           set -x
-          curl -fsS http://127.0.0.1:8000/health | jq -e '.status == "healthy"'
-          curl -fsS http://127.0.0.1:8000/version | jq -e --arg sha "$GITHUB_SHA" '.commit_sha == $sha'
-          curl -fsS http://127.0.0.1:8000/ | grep -q 'id="root"'
-          curl -fsS http://127.0.0.1:8000/rooms | grep -q 'id="root"'     # client route gets the app
-          code=$(curl -s -o api404.json -w '%{http_code}' http://127.0.0.1:8000/api/v1/no-such-route)
-          test "$code" = 404 && jq -e '.error.code == "NOT_FOUND"' api404.json   # API wins over the SPA
-          code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/ready)
-          test "$code" = 503                                                # no database here, as expected
+          curl -fsS "$base/health" | jq -e '.status == "healthy"'
+          curl -fsS "$base/version" | jq -e --arg sha "$GITHUB_SHA" '.commit_sha == $sha'
+          curl -fsS "$base/" | grep -q 'id="root"'
+          curl -fsS "$base/rooms" | grep -q 'id="root"'                # client route gets the app
+          code=$(curl -s -o api404.json -w '%{http_code}' "$base/api/v1/no-such-route")
+          test "$code" = 404 && jq -e '.error.code == "NOT_FOUND"' api404.json
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$base/ready")
+          test "$code" = 503                                           # no database here, as expected
+          curl -fsS "$base/metrics" | grep -q '^roombook_build_info{'   # Level 2 app metrics
 
       - name: Check the image for bundled secrets
         env:
@@ -99,6 +123,28 @@ jobs:
           if [ -n "$found" ]; then echo "::error::Possible secrets in image:"; echo "$found"; exit 1; fi
           echo "No .env files, private keys or database credentials found in the image."
 
+      - name: Scan for known vulnerabilities (fails on fixable critical)
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+        run: |
+          mkdir -p reports
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/reports:/reports" \
+            -v trivy-cache:/root/.cache/trivy "$TRIVY_IMAGE" image --quiet \
+            --scanners vuln --ignore-unfixed --severity HIGH,CRITICAL \
+            --format table --output /reports/trivy.txt "$IMAGE"
+          cat reports/trivy.txt
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            -v trivy-cache:/root/.cache/trivy "$TRIVY_IMAGE" image --quiet --skip-db-update \
+            --scanners vuln --ignore-unfixed --severity CRITICAL --exit-code 1 "$IMAGE"
+
+      - name: Generate the software bill of materials (SPDX)
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$SYFT_IMAGE" \
+            "docker:$IMAGE" -o spdx-json > reports/sbom.spdx.json
+          jq -r '"SBOM: \(.packages | length) packages"' reports/sbom.spdx.json
+
       - name: Publish to GHCR
         id: publish
         env:
@@ -108,12 +154,11 @@ jobs:
           REPO: ${{ steps.meta.outputs.repo }}
         run: |
           echo "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
-          docker push "$IMAGE"
+          docker push --quiet "$IMAGE"
           digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE")
           digest="${digest#*@}"
           echo "digest=${digest}"        >> "$GITHUB_OUTPUT"
           echo "ref=${REPO}@${digest}"   >> "$GITHUB_OUTPUT"
-          docker logout ghcr.io
 
       - name: Write the candidate manifest
         env:
@@ -123,115 +168,236 @@ jobs:
         run: |
           mkdir -p candidate
           jq -n \
-            --arg commit "$GITHUB_SHA" --arg image "$IMAGE" --arg ref "$REF" \
-            --arg built "$CREATED" --arg build_seconds "$BUILD_SECONDS" \
+            --arg repository "$GITHUB_REPOSITORY" --arg commit "$GITHUB_SHA" \
+            --arg image "$IMAGE" --arg ref "$REF" --arg built "$CREATED" \
+            --arg build_seconds "$BUILD_SECONDS" --arg runner "$RUNNER_NAME" \
             --arg run "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
-            '{commit: $commit, image: $image, ref: $ref, built: $built,
-              build_seconds: ($build_seconds | tonumber), run: $run, promotable: false}' \
+            '{repository: $repository, commit: $commit, image: $image, ref: $ref, built: $built,
+              build_seconds: ($build_seconds | tonumber), built_on: $runner, run: $run,
+              promotable: false}' \
             > candidate/candidate.json
           cat candidate/candidate.json
           {
             echo "### Candidate image"
-            echo ""
             echo "| Field | Value |"
             echo "|---|---|"
             echo "| Commit | \`$GITHUB_SHA\` |"
-            echo "| Image | \`$IMAGE\` |"
             echo "| Pinned reference | \`$REF\` |"
-            echo "| Build time | ${BUILD_SECONDS} s |"
+            echo "| Built on | \`$RUNNER_NAME\` in ${BUILD_SECONDS} s |"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Keep the candidate manifest
+      - name: Keep the manifest, scan report and SBOM
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: candidate-manifest
-          path: candidate/candidate.json
+          name: candidate-build
+          path: |
+            candidate/candidate.json
+            reports/
           retention-days: 30
 
-      - name: Keep container logs
+      - name: Clean up
         if: always()
-        run: docker logs candidate > candidate-ci.log 2>&1 || true
+        run: |
+          docker logs "${SMOKE_CONTAINER:-none}" > smoke.log 2>&1 || true
+          docker rm -f "${SMOKE_CONTAINER:-none}" >/dev/null 2>&1 || true
+          docker logout ghcr.io >/dev/null 2>&1 || true
+          rm -rf "$DOCKER_CONFIG"
 
-      - name: Upload container logs
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: candidate-ci-logs
-          path: candidate-ci.log
-          if-no-files-found: ignore
-          retention-days: 14
-
-  test-candidate:
-    name: Test the exact image (Testing)
+  test:
+    name: Test the exact image (Test server)
     needs: build
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    runs-on: ${{ vars.RUNNER_MODE == 'hosted' && 'ubuntu-24.04' || 'test' }}
+    timeout-minutes: 40
     permissions:
       contents: read
       packages: read
-    services:
-      postgres:
-        image: postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
-        env:
-          POSTGRES_USER: roombook
-          POSTGRES_PASSWORD: roombook
-          POSTGRES_DB: roombook_candidate
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U roombook -d roombook_candidate"
-          --health-interval 2s
-          --health-timeout 3s
-          --health-retries 30
     env:
       REF: ${{ needs.build.outputs.ref }}
-      DB: postgresql+psycopg://roombook:roombook@127.0.0.1:5432/roombook_candidate
+      PROJECT: rb-test-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
       - name: Pull the candidate by digest
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ACTOR: ${{ github.actor }}
         run: |
+          echo "DOCKER_CONFIG=$RUNNER_TEMP/docker-config" >> "$GITHUB_ENV"
+          export DOCKER_CONFIG="$RUNNER_TEMP/docker-config"
           echo "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
-          docker pull "$REF"
-          docker logout ghcr.io
+          docker pull --quiet "$REF"
+          echo "TEST_PORT=$(( 20000 + GITHUB_RUN_NUMBER % 10000 ))" >> "$GITHUB_ENV"
+          mkdir -p reports
 
-      - name: Migrate and seed with the image's own tools
+      - name: Start the disposable Testing stack
+        env:
+          ROOMBOOK_IMAGE: ${{ needs.build.outputs.ref }}
         run: |
-          docker run --rm --network host -e ROOMBOOK_DATABASE_URL="$DB" "$REF" alembic upgrade head
-          docker run --rm --network host -e ROOMBOOK_DATABASE_URL="$DB" "$REF" python -m scripts.seed_rooms
-
-      - name: Start the candidate
-        run: |
-          docker run -d --name candidate --network host \
-            -e ROOMBOOK_DATABASE_URL="$DB" -e ROOMBOOK_ENVIRONMENT=testing "$REF"
-          for _ in $(seq 1 30); do
-            curl -fsS http://127.0.0.1:8000/ready >/dev/null 2>&1 && break
-            sleep 1
-          done
-
-      - name: Verify database connection, rooms and identity
-        run: |
+          compose="docker compose -p $PROJECT -f deploy/compose/testing.yml"
+          $compose up -d --wait db
+          $compose run --rm --no-deps -T app alembic upgrade head
+          $compose run --rm --no-deps -T app python -m scripts.seed_rooms
+          $compose up -d --wait app
+          base="http://127.0.0.1:$TEST_PORT"
+          for _ in $(seq 1 30); do curl -fsS "$base/ready" >/dev/null 2>&1 && break; sleep 1; done
           set -x
-          curl -fsS http://127.0.0.1:8000/ready | jq -e '.status == "ready"'
-          curl -fsS http://127.0.0.1:8000/version \
-            | jq -e --arg sha "$GITHUB_SHA" '.commit_sha == $sha and .environment == "testing"'
-          curl -fsS http://127.0.0.1:8000/api/v1/rooms | jq -e '.total >= 2'
-          curl -fsS "http://127.0.0.1:8000/api/v1/rooms?starts_at=2030-01-07T02%3A00%3A00Z&ends_at=2030-01-07T03%3A00%3A00Z" \
+          curl -fsS "$base/ready" | jq -e '.status == "ready"'
+          curl -fsS "$base/version" | jq -e --arg sha "$GITHUB_SHA" '.commit_sha == $sha and .environment == "testing"'
+          curl -fsS "$base/api/v1/rooms" | jq -e '.total >= 2'
+          # RB-51 policy: a future start within 14 days, on a 15-minute boundary,
+          # 30 minutes to 2 hours long. 02:00Z tomorrow is midday in Melbourne.
+          day=$(date -u -d tomorrow +%F)
+          curl -fsS "$base/api/v1/rooms?starts_at=${day}T02%3A00%3A00Z&ends_at=${day}T03%3A00%3A00Z" \
             | jq -e '[.items[].available] | all(type == "boolean")'
-          curl -fsS http://127.0.0.1:8000/ | grep -q 'id="root"'
 
-      # Daniel's Playwright journeys (tests/e2e) run here against http://127.0.0.1:8000.
+      - name: Backend unit and integration tests (real PostgreSQL)
+        run: |
+          docker build --quiet -f backend/Dockerfile.test -t "roombook-backend-tests:$GITHUB_SHA" backend >/dev/null
+          docker run --rm --network "${PROJECT}_default" -v "$PWD/reports:/reports" \
+            -e ROOMBOOK_TEST_DATABASE_URL=postgresql+psycopg://roombook:roombook-testing@db:5432/roombook_test \
+            "roombook-backend-tests:$GITHUB_SHA" \
+            uv run --locked pytest --cov=app --cov-report=term --cov-report=xml:/reports/backend-coverage.xml \
+              --junitxml=/reports/backend-junit.xml
 
-      - name: Keep candidate logs
-        if: always()
-        run: docker logs candidate > candidate-testing.log 2>&1 || true
+      - name: Frontend unit tests
+        run: |
+          docker run --rm -v "$PWD/frontend:/src" -w /src -v "$PWD/reports:/reports" \
+            node:24.19.0-slim@sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df \
+            sh -c 'npm install --global npm@11.6.2 >/dev/null && npm ci --no-audit --no-fund >/dev/null \
+                   && npm run test:coverage && cp -r coverage /reports/frontend-coverage'
 
-      - name: Upload candidate logs
+      - name: Browser journeys against the candidate
+        run: |
+          docker build --quiet -t roombook-e2e tests/e2e >/dev/null
+          docker run --rm --network "${PROJECT}_default" -v "$PWD/reports/e2e-testing:/e2e/results" \
+            -e BASE_URL=http://app:8000 -e EXPECTED_COMMIT="$GITHUB_SHA" -e EXPECTED_ENVIRONMENT=testing \
+            roombook-e2e
+
+      - name: Keep test reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: candidate-testing-logs
-          path: candidate-testing.log
+          name: candidate-test-reports
+          path: reports/
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 30
+
+      - name: Remove the Testing stack
+        if: always()
+        env:
+          ROOMBOOK_IMAGE: ${{ needs.build.outputs.ref }}
+        run: |
+          docker compose -p "$PROJECT" -f deploy/compose/testing.yml logs --no-color > testing-stack.log 2>&1 || true
+          docker compose -p "$PROJECT" -f deploy/compose/testing.yml down --volumes --remove-orphans || true
+          docker run --rm -v "$PWD:/w" alpine:3.22 sh -c 'rm -rf /w/frontend/node_modules /w/frontend/coverage /w/reports' || true
+          docker logout ghcr.io >/dev/null 2>&1 || true
+          rm -rf "$DOCKER_CONFIG"
+
+  staging:
+    name: Deploy and verify Staging (Test server)
+    needs: [build, test]
+    if: vars.RUNNER_MODE != 'hosted'
+    runs-on: test
+    timeout-minutes: 30
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
+      deployments: write
+    outputs:
+      ref: ${{ needs.build.outputs.ref }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Deploy the same digest to Staging
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+          REF: ${{ needs.build.outputs.ref }}
+        run: |
+          export DOCKER_CONFIG="$RUNNER_TEMP/docker-config"
+          echo "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+          deploy/scripts/deploy.sh staging "$REF" "$GITHUB_SHA"
+          docker logout ghcr.io >/dev/null 2>&1 || true
+          rm -rf "$DOCKER_CONFIG"
+
+      - name: Browser journeys against Staging over HTTPS
+        run: |
+          . /etc/roombook/site.env
+          echo "STAGING_URL=https://$SITE_HOST" >> "$GITHUB_ENV"
+          docker build --quiet -t roombook-e2e tests/e2e >/dev/null
+          mkdir -p reports
+          docker run --rm -v "$PWD/reports/e2e-staging:/e2e/results" \
+            -e BASE_URL="https://$SITE_HOST" -e EXPECTED_COMMIT="$GITHUB_SHA" -e EXPECTED_ENVIRONMENT=staging \
+            roombook-e2e
+
+      - name: Record the validated release
+        env:
+          REF: ${{ needs.build.outputs.ref }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p release
+          jq -n --arg repository "$GITHUB_REPOSITORY" --arg commit "$GITHUB_SHA" --arg ref "$REF" \
+            --arg staging "$STAGING_URL" --arg validated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg run_id "$GITHUB_RUN_ID" \
+            --arg run "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            '{repository: $repository, commit: $commit, ref: $ref, staging: $staging,
+              validated: $validated, run_id: $run_id, run: $run, promotable: true}' > release/release-manifest.json
+          cat release/release-manifest.json
+          # GitHub Deployment record (feeds DORA deployment frequency and lead time).
+          api="$GITHUB_API_URL/repos/$GITHUB_REPOSITORY"
+          id=$(curl -fsS -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
+            "$api/deployments" -d "$(jq -n --arg ref "$GITHUB_SHA" --arg env staging --arg digest "$REF" \
+              '{ref: $ref, environment: $env, auto_merge: false, required_contexts: [],
+                payload: {image: $digest}, description: "Validated candidate"}')" | jq -r .id)
+          curl -fsS -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
+            "$api/deployments/$id/statuses" \
+            -d "$(jq -n --arg url "$STAGING_URL" --arg log "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+              '{state: "success", environment_url: $url, log_url: $log}')" >/dev/null
+          {
+            echo "### Validated for Production"
+            echo "Staging: $STAGING_URL"
+            echo ""
+            echo "Deferred release: Actions > **Release to Production** > Run workflow > candidate run ID **$GITHUB_RUN_ID**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the release manifest
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-manifest
+          path: release/release-manifest.json
+          retention-days: 90
+
+      - name: Keep Staging browser reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: staging-browser-reports
+          path: reports/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Remove container-owned files from the workspace
+        if: always()
+        run: docker run --rm -v "$PWD:/w" alpine:3.22 sh -c 'rm -rf /w/reports' || true
+
+  production:
+    name: Automatic release to Production
+    needs: [build, staging]
+    if: vars.PROD_AUTO_PROMOTE == 'true'
+    uses: ./.github/workflows/release.yml
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+      deployments: write
+    with:
+      candidate_run_id: ${{ github.run_id }}
+      ref: ${{ needs.build.outputs.ref }}
+      commit: ${{ github.sha }}

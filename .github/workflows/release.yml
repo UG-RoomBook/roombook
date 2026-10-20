@@ -1,0 +1,175 @@
+name: Release to Production
+
+# Deferred mode (default): run this workflow by hand with the run ID of a
+# successful Candidate pipeline run. Automatic mode: the Candidate pipeline
+# calls it when repository variable PROD_AUTO_PROMOTE is "true". Both use the
+# same checks and the same deploy script (ADR-005).
+#
+# A release is accepted only if its manifest says it passed the Test server and
+# Staging, it belongs to this repository, its commit is on main, and it is not
+# older than what Production already runs. `rollback` redeploys the previous
+# Production image (no database downgrade).
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_run_id:
+        description: "Run ID of a successful Candidate pipeline run (ignored for rollback)"
+        required: false
+        type: string
+      action:
+        description: "release a validated candidate, or roll back to the previous release"
+        required: true
+        type: choice
+        default: release
+        options: [release, rollback]
+  workflow_call:
+    inputs:
+      candidate_run_id:
+        required: true
+        type: string
+      ref:
+        required: true
+        type: string
+      commit:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: ${{ inputs.action == 'rollback' && 'Roll back' || 'Release' }} Production (Production server)
+    runs-on: production
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+      deployments: write
+    env:
+      ACTION: ${{ inputs.action || 'release' }}
+      RUN_ID: ${{ inputs.candidate_run_id }}
+      CALLED_REF: ${{ inputs.ref }}
+      CALLED_COMMIT: ${{ inputs.commit }}
+      TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve and check the release
+        run: |
+          set -euo pipefail
+          state=/srv/roombook/production
+          current="$(cat "$state/current.commit" 2>/dev/null || true)"
+          api="$GITHUB_API_URL/repos/$GITHUB_REPOSITORY"
+          auth=(-H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json")
+
+          if [[ "$ACTION" == rollback ]]; then
+            ref="$(cat "$state/previous.ref" 2>/dev/null || true)"
+            commit="$(cat "$state/previous.commit" 2>/dev/null || true)"
+            [[ -n "$ref" && -n "$commit" ]] || { echo "::error::No previous Production release recorded."; exit 1; }
+            source="rollback from ${current:0:7}"
+          else
+            [[ "$RUN_ID" =~ ^[0-9]+$ ]] || { echo "::error::Enter the Candidate pipeline run ID."; exit 1; }
+            run=$(curl -fsS "${auth[@]}" "$api/actions/runs/$RUN_ID")
+            jq -e '.path == ".github/workflows/candidate.yml" and .head_branch == "main"' <<<"$run" >/dev/null \
+              || { echo "::error::Run $RUN_ID is not a Candidate pipeline run on main."; exit 1; }
+            if [[ "$RUN_ID" != "$GITHUB_RUN_ID" ]]; then
+              jq -e '.conclusion == "success"' <<<"$run" >/dev/null \
+                || { echo "::error::Run $RUN_ID did not succeed ($(jq -r .conclusion <<<"$run"))."; exit 1; }
+            fi
+            url=$(curl -fsS "${auth[@]}" "$api/actions/runs/$RUN_ID/artifacts?name=release-manifest" \
+              | jq -r '.artifacts[0].archive_download_url // empty')
+            [[ -n "$url" ]] || { echo "::error::Run $RUN_ID has no validated release manifest (did Staging pass?)."; exit 1; }
+            curl -fsSL "${auth[@]}" -o "$RUNNER_TEMP/manifest.zip" "$url"
+            unzip -o -q "$RUNNER_TEMP/manifest.zip" -d "$RUNNER_TEMP/manifest"
+            manifest="$RUNNER_TEMP/manifest/release-manifest.json"
+            cat "$manifest"
+            jq -e --arg repo "$GITHUB_REPOSITORY" '.promotable == true and .repository == $repo' "$manifest" >/dev/null \
+              || { echo "::error::The manifest is not a promotable release of this repository."; exit 1; }
+            ref=$(jq -r .ref "$manifest")
+            commit=$(jq -r .commit "$manifest")
+            if [[ -n "$CALLED_REF" ]]; then
+              [[ "$CALLED_REF" == "$ref" && "$CALLED_COMMIT" == "$commit" ]] \
+                || { echo "::error::Called with a different image than the validated manifest."; exit 1; }
+            fi
+            git merge-base --is-ancestor "$commit" origin/main \
+              || { echo "::error::Commit $commit is not on main."; exit 1; }
+            if [[ -n "$current" && "$current" != "$commit" ]] && ! git merge-base --is-ancestor "$current" "$commit"; then
+              echo "::error::Stale candidate: Production already runs ${current:0:7}, which is newer than ${commit:0:7}. Use rollback to go back."
+              exit 1
+            fi
+            source="candidate run $RUN_ID"
+          fi
+          {
+            echo "REF=$ref"
+            echo "COMMIT=$commit"
+            echo "SOURCE=$source"
+          } >> "$GITHUB_ENV"
+          echo "Releasing ${commit:0:7} ($ref) to Production: $source"
+
+      - name: Use the release's own deployment files
+        run: git checkout --quiet --detach "$COMMIT"
+
+      - name: Open a GitHub Deployment record
+        run: |
+          api="$GITHUB_API_URL/repos/$GITHUB_REPOSITORY"
+          id=$(curl -fsS -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
+            "$api/deployments" -d "$(jq -n --arg ref "$COMMIT" --arg digest "$REF" --arg desc "$ACTION: $SOURCE" \
+              '{ref: $ref, environment: "production", auto_merge: false, required_contexts: [],
+                production_environment: true, payload: {image: $digest}, description: $desc}')" | jq -r .id)
+          echo "DEPLOYMENT_ID=$id" >> "$GITHUB_ENV"
+          curl -fsS -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
+            "$api/deployments/$id/statuses" -d '{"state":"in_progress"}' >/dev/null
+
+      - name: Deploy, verify, or roll back automatically
+        env:
+          ACTOR: ${{ github.actor }}
+        run: |
+          export DOCKER_CONFIG="$RUNNER_TEMP/docker-config"
+          echo "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+          deploy/scripts/deploy.sh production "$REF" "$COMMIT"
+
+      - name: Mark the release on the Grafana dashboard
+        if: always()
+        continue-on-error: true
+        run: |
+          . /etc/roombook/monitoring.env
+          text="$ACTION ${COMMIT:0:7}: ${{ job.status }} ($SOURCE)"
+          curl -fsS -u "$GF_SECURITY_ADMIN_USER:$GF_SECURITY_ADMIN_PASSWORD" -H 'Content-Type: application/json' \
+            http://127.0.0.1:3000/api/annotations \
+            -d "$(jq -n --arg text "$text" --arg sha "${COMMIT:0:7}" '{tags: ["deploy", "production", $sha], text: $text}')"
+
+      - name: Close the Deployment record
+        if: always() && env.DEPLOYMENT_ID != ''
+        run: |
+          state=$([[ "${{ job.status }}" == success ]] && echo success || echo failure)
+          . /etc/roombook/site.env
+          curl -fsS -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/deployments/$DEPLOYMENT_ID/statuses" \
+            -d "$(jq -n --arg s "$state" --arg url "https://$SITE_HOST" \
+              --arg log "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+              '{state: $s, environment_url: $url, log_url: $log}')" >/dev/null
+          {
+            echo "### Production ${ACTION}: ${state}"
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Commit | \`$COMMIT\` |"
+            echo "| Image | \`$REF\` |"
+            echo "| Source | $SOURCE |"
+            echo "| Site | https://$SITE_HOST |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Clean up credentials
+        if: always()
+        run: |
+          docker logout ghcr.io >/dev/null 2>&1 || true
+          rm -rf "$RUNNER_TEMP/docker-config"

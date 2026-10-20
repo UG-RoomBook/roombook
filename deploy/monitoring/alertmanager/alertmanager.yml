@@ -1,0 +1,21 @@
+# Routes every alert to the team Discord channel. The webhook URL is a secret:
+# it is stored in SSM (/roombook/production/discord-webhook-url) and written to
+# /etc/roombook/alertmanager-discord-url by Ansible, never committed.
+route:
+  receiver: discord
+  group_by: [alertname, host]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  - name: discord
+    discord_configs:
+      - webhook_url_file: /etc/alertmanager/discord-url
+        send_resolved: true
+
+inhibit_rules:
+  # A host that is down will also fail every other check on it.
+  - source_matchers: [alertname="HostDown"]
+    target_matchers: [severity="warning"]
+    equal: [host]

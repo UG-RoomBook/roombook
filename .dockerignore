@@ -21,3 +21,7 @@ backend/tests/
 **/.env.*
 !**/.env.example
 **/*.log
+# Delivery code is not part of the application image
+infra/
+deploy/
+tests/
