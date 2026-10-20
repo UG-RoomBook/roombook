@@ -169,17 +169,31 @@ def locked_room(
     """
     if session.in_transaction() or session.new or session.dirty or session.deleted:
         raise RuntimeError("Use a clean session; locked_room owns the transaction")
-    with session.begin() as transaction:
-        if session.connection().get_isolation_level() != "READ COMMITTED":
-            raise RuntimeError("Room writers require READ COMMITTED isolation")
-        room = session.scalar(
-            select(Room)
-            .where(Room.id == room_id)
-            .with_for_update()
-            .execution_options(populate_existing=True)
-        )
-        if room is None:
-            raise ApiError(404, "ROOM_NOT_FOUND", "The room was not found.")
-        guard = LockedRoom(session, room, transaction, clock)
+    with session.begin(), room_in_transaction(session, room_id, clock=clock) as guard:
         yield guard
-        guard.preserve_bookings()
+
+
+@contextmanager
+def room_in_transaction(
+    session: Session, room_id: UUID, *, clock: Callable[[], datetime] = current_time
+) -> Iterator[LockedRoom]:
+    """Compose the same room lock with a caller-owned idempotency transaction.
+
+    The caller commits once after this guard exits. Never commit inside the block.
+    """
+    transaction = session.get_transaction()
+    if transaction is None or not transaction.is_active:
+        raise RuntimeError("Room lock requires an active service-owned transaction")
+    if session.connection().get_isolation_level() != "READ COMMITTED":
+        raise RuntimeError("Room writers require READ COMMITTED isolation")
+    room = session.scalar(
+        select(Room)
+        .where(Room.id == room_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    if room is None:
+        raise ApiError(404, "ROOM_NOT_FOUND", "The room was not found.")
+    guard = LockedRoom(session, room, transaction, clock)
+    yield guard
+    guard.preserve_bookings()

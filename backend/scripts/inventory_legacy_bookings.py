@@ -2,7 +2,7 @@
 
 import json
 
-from sqlalchemy import func, select
+from sqlalchemy import func, inspect, select
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
@@ -12,9 +12,11 @@ from app.modules.bookings.models import Booking
 
 def inventory_legacy_bookings(session: Session) -> dict[str, object]:
     """Report existing unowned history; this migration never infers an owner."""
-    counts = dict(
-        session.execute(select(Booking.status, func.count()).group_by(Booking.status)).all()
-    )
+    statement = select(Booking.status, func.count()).group_by(Booking.status)
+    columns = {column["name"] for column in inspect(session.connection()).get_columns("bookings")}
+    if "owner_id" in columns:
+        statement = statement.where(Booking.owner_id.is_(None))
+    counts = dict(session.execute(statement).all())
     return {
         "ownership": "not_assigned",
         "total": sum(counts.values()),

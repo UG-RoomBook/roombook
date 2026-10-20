@@ -9,7 +9,7 @@ from app.modules.availability.models import (  # noqa: F401
     ExceptionHours,
     WeeklyHours,
 )
-from app.modules.bookings.models import Booking  # noqa: F401
+from app.modules.bookings.models import Booking, BookingRequest  # noqa: F401
 from app.modules.identity.accounts import AccountAttempt  # noqa: F401
 from app.modules.identity.models import ApplicationUser, AuditEvent, AuthSession, ExternalIdentity  # noqa: F401
 from app.modules.rooms.models import Room  # noqa: F401

@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, type Options as Options2, type RequestResult, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { ChangeAccountEmailData, ChangeAccountEmailErrors, ChangeAccountEmailResponses, ConfirmAccountEmailData, ConfirmAccountEmailErrors, GetCurrentSessionData, GetCurrentSessionErrors, GetCurrentSessionResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetRecoverySessionData, GetRecoverySessionErrors, GetRecoverySessionResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ListRoomsData, ListRoomsErrors, ListRoomsResponses, LoginAccountData, LoginAccountErrors, LoginAccountResponses, LogoutCurrentSessionData, LogoutCurrentSessionErrors, LogoutCurrentSessionResponses, RegisterAccountData, RegisterAccountErrors, RegisterAccountResponses, RequestAccountRecoveryData, RequestAccountRecoveryErrors, RequestAccountRecoveryResponses, ResendAccountVerificationData, ResendAccountVerificationErrors, ResendAccountVerificationResponses, ResetAccountPasswordData, ResetAccountPasswordErrors, ResetAccountPasswordResponses, ShowAccountConfirmationData, ShowAccountConfirmationErrors, ShowAccountConfirmationResponses } from './types.gen';
+import type { ChangeAccountEmailData, ChangeAccountEmailErrors, ChangeAccountEmailResponses, ConfirmAccountEmailData, ConfirmAccountEmailErrors, CreateBookingData, CreateBookingErrors, CreateBookingResponses, GetCurrentSessionData, GetCurrentSessionErrors, GetCurrentSessionResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetRecoverySessionData, GetRecoverySessionErrors, GetRecoverySessionResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ListRoomsData, ListRoomsErrors, ListRoomsResponses, LoginAccountData, LoginAccountErrors, LoginAccountResponses, LogoutCurrentSessionData, LogoutCurrentSessionErrors, LogoutCurrentSessionResponses, RegisterAccountData, RegisterAccountErrors, RegisterAccountResponses, RequestAccountRecoveryData, RequestAccountRecoveryErrors, RequestAccountRecoveryResponses, ResendAccountVerificationData, ResendAccountVerificationErrors, ResendAccountVerificationResponses, ResetAccountPasswordData, ResetAccountPasswordErrors, ResetAccountPasswordResponses, ShowAccountConfirmationData, ShowAccountConfirmationErrors, ShowAccountConfirmationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -137,6 +137,25 @@ export const getCurrentSession = <ThrowOnError extends boolean = false>(options?
         }],
     url: '/api/v1/auth/session',
     ...options
+});
+
+/**
+ * Book
+ *
+ * Create a booking owned by the authenticated user. A required UUID Idempotency-Key is scoped to that user and retained with booking history without automatic expiry. The same normalized request replays the original 201 body, including after cancellation. A changed payload returns IDEMPOTENCY_MISMATCH. REQUEST_IN_PROGRESS or BOOKING_BUSY means retry the same key and payload after a short delay. After timeout or 503, reconcile by repeating the same key and payload; never generate a new key for an uncertain result. Validation/conflict failures roll back and do not consume the key.
+ */
+export const createBooking = <ThrowOnError extends boolean = false>(options: Options<CreateBookingData, ThrowOnError>): RequestResult<CreateBookingResponses, CreateBookingErrors, ThrowOnError> => (options.client ?? client).post<CreateBookingResponses, CreateBookingErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/bookings',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

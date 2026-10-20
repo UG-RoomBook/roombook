@@ -17,6 +17,15 @@ def is_identity_path(path: str) -> bool:
     return decoded == "/api/v1/auth" or decoded.startswith("/api/v1/auth/")
 
 
+def is_private_path(path: str) -> bool:
+    decoded = unquote(path.split("?", 1)[0])
+    return (
+        is_identity_path(path)
+        or decoded == "/api/v1/bookings"
+        or decoded.startswith("/api/v1/bookings/")
+    )
+
+
 def apply_private_headers(response: Response) -> None:
     response.headers["Cache-Control"] = "private, no-store"
     response.headers["Pragma"] = "no-cache"
@@ -47,7 +56,7 @@ def install_identity_http_policy(app: FastAPI) -> None:
         try:
             response = await call_next(request)
         except Exception as exc:
-            if not is_identity_path(request.url.path):
+            if not is_private_path(request.url.path):
                 raise
             # ServerErrorMiddleware rethrows errors to Uvicorn, whose traceback can
             # reveal provider payloads. Consume account failures before that boundary.
@@ -59,6 +68,6 @@ def install_identity_http_policy(app: FastAPI) -> None:
             response = error_response(
                 request, 500, "INTERNAL_ERROR", "An unexpected error occurred."
             )
-        if is_identity_path(request.url.path) or "set-cookie" in response.headers:
+        if is_private_path(request.url.path) or "set-cookie" in response.headers:
             apply_private_headers(response)
         return response
