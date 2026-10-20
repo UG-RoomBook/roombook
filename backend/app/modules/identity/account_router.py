@@ -11,9 +11,9 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.core.errors import ApiError, ErrorResponse
 from app.modules.identity.accounts import AccountService, LinkType
-from app.modules.identity.dependencies import get_session_service
+from app.modules.identity.dependencies import get_session_service, session_token
 from app.modules.identity.provider import SupabaseProvider
-from app.modules.identity.router import _token, set_session_cookie
+from app.modules.identity.router import set_session_cookie
 from app.modules.identity.schemas import SessionResponse, SessionUser
 from app.modules.identity.types import InvalidIdentity
 
@@ -82,7 +82,7 @@ def rate(request: Request, service: AccountService, action: str, email: str = ""
 
 def authenticated_token(request: Request, service: AccountService, purpose: str) -> str:
     origin_check(request)
-    opaque = _token(request, request.app.state.settings)
+    opaque = session_token(request, request.app.state.settings)
     if opaque is None:
         raise ApiError(401, "AUTH_REQUIRED", "Sign in or request a new recovery link.")
     result, _ = service.account_access(opaque, purpose)
@@ -109,7 +109,7 @@ def login(
     origin_check(request)
     rate(request, service, "login", str(body.email))
     result = service.login(
-        str(body.email), body.password, _token(request, request.app.state.settings)
+        str(body.email), body.password, session_token(request, request.app.state.settings)
     )
     set_session_cookie(response, request.app.state.settings, result)
     return SessionResponse(
@@ -234,7 +234,9 @@ def confirm(
             403, "LINK_CONFIRMATION_EXPIRED", "Open the email link again to continue."
         ) from None
     try:
-        result = service.confirm(token_hash, type, _token(request, request.app.state.settings))
+        result = service.confirm(
+            token_hash, type, session_token(request, request.app.state.settings)
+        )
         target = "/account/reset" if type == "recovery" else "/account/login?notice=verified"
         if type == "email_change":
             target = "/account/login?notice=email-change"
@@ -254,7 +256,7 @@ def confirm(
 
 @router.get("/recovery-session", operation_id="getRecoverySession", response_model=RecoveryResponse)
 def recovery_session(request: Request, service: AccountsDependency) -> RecoveryResponse:
-    opaque = _token(request, request.app.state.settings)
+    opaque = session_token(request, request.app.state.settings)
     if opaque is None:
         raise ApiError(401, "AUTH_REQUIRED", "Request a new recovery link.")
     result, _ = service.account_access(opaque, "recovery")

@@ -23,6 +23,58 @@ export type BodyConfirmAccountEmail = {
 };
 
 /**
+ * BookingCreate
+ */
+export type BookingCreate = {
+    /**
+     * Ends At
+     */
+    ends_at: string;
+    /**
+     * Room Id
+     */
+    room_id: string;
+    /**
+     * Starts At
+     */
+    starts_at: string;
+};
+
+/**
+ * BookingCreated
+ */
+export type BookingCreated = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Ends At
+     */
+    ends_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Owner Id
+     */
+    owner_id: string;
+    /**
+     * Room Id
+     */
+    room_id: string;
+    /**
+     * Starts At
+     */
+    starts_at: string;
+    /**
+     * Status
+     */
+    status?: 'active';
+};
+
+/**
  * EmailInput
  */
 export type EmailInput = {
@@ -852,6 +904,75 @@ export type GetCurrentSessionResponses = {
 };
 
 export type GetCurrentSessionResponse = GetCurrentSessionResponses[keyof GetCurrentSessionResponses];
+
+export type CreateBookingData = {
+    body: BookingCreate;
+    headers: {
+        /**
+         * Idempotency-Key
+         *
+         * Persist one UUID per logical booking attempt.
+         */
+        'idempotency-key': string;
+        /**
+         * Origin
+         *
+         * Exact configured RoomBook application origin.
+         */
+        Origin?: string | null;
+        /**
+         * X-Csrf-Token
+         *
+         * CSRF value from the current session.
+         */
+        'X-CSRF-Token'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/bookings';
+};
+
+export type CreateBookingErrors = {
+    /**
+     * Sign-in required
+     */
+    401: ErrorResponse;
+    /**
+     * Restricted account or invalid Origin/CSRF
+     */
+    403: ErrorResponse;
+    /**
+     * Room not found
+     */
+    404: ErrorResponse;
+    /**
+     * Room unavailable, key mismatch or transient busy
+     */
+    409: ErrorResponse;
+    /**
+     * Invalid body, key or booking interval
+     */
+    422: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Database or account services unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type CreateBookingError = CreateBookingErrors[keyof CreateBookingErrors];
+
+export type CreateBookingResponses = {
+    /**
+     * Successful Response
+     */
+    201: BookingCreated;
+};
+
+export type CreateBookingResponse = CreateBookingResponses[keyof CreateBookingResponses];
 
 export type ListRoomsData = {
     body?: never;

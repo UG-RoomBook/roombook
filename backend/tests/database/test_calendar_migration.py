@@ -40,16 +40,37 @@ def test_prior_schema_data_survives_upgrade_and_empty_calendar_downgrade(
                 ),
                 {"id": booking_id, "room": room_id},
             )
-            before = connection.execute(text("SELECT * FROM bookings")).all()
+            before = connection.execute(
+                text(
+                    "SELECT id,room_id,starts_at,ends_at,status,created_at,cancelled_at "
+                    "FROM bookings"
+                )
+            ).all()
         command.upgrade(config, "head")
         with Session(db_engine) as session:
             room = session.get(Room, room_id)
             assert room is not None and room.hours_confirmed is False
             assert inventory(session)["rooms_without_confirmed_hours"] == 1
-            assert session.execute(text("SELECT * FROM bookings")).all() == before
+            assert (
+                session.execute(
+                    text(
+                        "SELECT id,room_id,starts_at,ends_at,status,created_at,cancelled_at "
+                        "FROM bookings"
+                    )
+                ).all()
+                == before
+            )
         command.downgrade(config, "0003")
         with db_engine.connect() as connection:
-            assert connection.execute(text("SELECT * FROM bookings")).all() == before
+            assert (
+                connection.execute(
+                    text(
+                        "SELECT id,room_id,starts_at,ends_at,status,created_at,cancelled_at "
+                        "FROM bookings"
+                    )
+                ).all()
+                == before
+            )
             assert connection.scalar(text("SELECT id FROM rooms")) == room_id
         command.upgrade(config, "head")
 
@@ -64,7 +85,7 @@ def test_populated_calendars_refuse_destructive_downgrade(
         with pytest.raises(DBAPIError, match="Refusing to discard"):
             command.downgrade(Config("alembic.ini"), "0003")
     with Session(db_engine) as session:
-        assert inventory(session)["revision"] == "0004"
+        assert inventory(session)["revision"] == "0005"
         assert len(session.scalars(select(WeeklyHours)).all()) == 7
 
 

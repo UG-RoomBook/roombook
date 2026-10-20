@@ -209,14 +209,22 @@ def test_prior_schema_upgrade_preserves_rooms_and_bookings_and_refuses_data_loss
                 {"id": booking_id, "room": room_id, "start": NOW, "end": NOW + timedelta(hours=1)},
             )
             before = connection.execute(
-                text("SELECT * FROM bookings WHERE id = :id"), {"id": booking_id}
+                text(
+                    "SELECT id,room_id,starts_at,ends_at,status,created_at,cancelled_at "
+                    "FROM bookings WHERE id = :id"
+                ),
+                {"id": booking_id},
             ).one()
         try:
             command.upgrade(config, "head")
             command.upgrade(config, "head")
             with db_engine.begin() as connection:
                 after = connection.execute(
-                    text("SELECT * FROM bookings WHERE id = :id"), {"id": booking_id}
+                    text(
+                        "SELECT id,room_id,starts_at,ends_at,status,created_at,cancelled_at "
+                        "FROM bookings WHERE id = :id"
+                    ),
+                    {"id": booking_id},
                 ).one()
                 assert tuple(after) == tuple(before)
                 assert (
@@ -238,7 +246,7 @@ def test_prior_schema_upgrade_preserves_rooms_and_bookings_and_refuses_data_loss
                     )
                     == 1
                 )
-                assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0004"
+                assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0005"
                 connection.execute(
                     text("DELETE FROM application_users WHERE id = :id"), {"id": user_id}
                 )

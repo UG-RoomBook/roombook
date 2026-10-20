@@ -1,0 +1,16 @@
+{
+  "environment": "localhost HTTP + isolated PostgreSQL; synthetic identity provider",
+  "guest": 401,
+  "owner_spoof": 422,
+  "create": 201,
+  "replay": 201,
+  "payload_mismatch": 409,
+  "other_user_same_key_overlap": 409,
+  "logout": 204,
+  "revoked_retry": 401,
+  "identical_original_result": true,
+  "private_no_store": true,
+  "bookings": 1,
+  "successful_retry_records": 1,
+  "cleanup": "only synthetic records created by this smoke check"
+}
