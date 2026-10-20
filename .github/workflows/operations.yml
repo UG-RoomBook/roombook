@@ -80,9 +80,16 @@ jobs:
         with:
           persist-credentials: false
       - name: Start or update the monitoring stack
+        id: stack
         run: |
-          docker network inspect roombook-production_backend >/dev/null 2>&1 || {
-            echo "::error::Deploy the application to Production first; monitoring joins its network."; exit 1; }
+          if ! docker network inspect roombook-production_backend >/dev/null 2>&1; then
+            # A configuration push before the first release has nothing to monitor yet.
+            if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+              echo "::notice::Production is not deployed yet; run Operations > monitoring after the first release."
+              echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+            echo "::error::Deploy the application to Production first; monitoring joins its network."; exit 1
+          fi
           # Run from a stable copy: the runner workspace changes with every job.
           target=/srv/roombook/monitoring
           mkdir -p "$target/compose"
@@ -93,6 +100,7 @@ jobs:
           docker compose -p roombook-monitoring -f "$target/compose/monitoring.yml" up -d --wait --remove-orphans
           curl -fsS -X POST http://127.0.0.1:9090/-/reload
       - name: Check every scrape target is up
+        if: steps.stack.outputs.skip != 'true'
         run: |
           for _ in $(seq 1 12); do
             down=$(curl -fsS http://127.0.0.1:9090/api/v1/targets | jq -r '.data.activeTargets[] | select(.health != "up") | "\(.labels.job) \(.labels.host // "") \(.lastError)"')
