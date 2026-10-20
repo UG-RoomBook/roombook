@@ -238,7 +238,7 @@ def test_prior_schema_upgrade_preserves_rooms_and_bookings_and_refuses_data_loss
                     )
                     == 1
                 )
-                assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0003"
+                assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0004"
                 connection.execute(
                     text("DELETE FROM application_users WHERE id = :id"), {"id": user_id}
                 )

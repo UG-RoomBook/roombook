@@ -3,6 +3,12 @@ from sqlalchemy import create_engine, pool
 from alembic import context
 from app.core.config import Settings
 from app.db.base import Base
+from app.modules.availability.models import (  # noqa: F401
+    Closure,
+    DateException,
+    ExceptionHours,
+    WeeklyHours,
+)
 from app.modules.bookings.models import Booking  # noqa: F401
 from app.modules.identity.accounts import AccountAttempt  # noqa: F401
 from app.modules.identity.models import ApplicationUser, AuditEvent, AuthSession, ExternalIdentity  # noqa: F401

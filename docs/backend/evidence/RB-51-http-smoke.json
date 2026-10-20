@@ -1,0 +1,101 @@
+[
+  {
+    "path": "/health",
+    "status": 200,
+    "body": {
+      "status": "healthy"
+    }
+  },
+  {
+    "path": "/ready",
+    "status": 200,
+    "body": {
+      "status": "ready"
+    }
+  },
+  {
+    "path": "/api/v1/rooms",
+    "status": 200,
+    "body": {
+      "items": [
+        {
+          "id": "10000000-0000-4000-8000-000000000051",
+          "name": "Synthetic development room",
+          "location": "Local fixture \u2014 not university hours",
+          "capacity": 4,
+          "active": true
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000002",
+          "name": "The Forum",
+          "location": "North building \u00b7 Level 2",
+          "capacity": 8,
+          "active": true
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000001",
+          "name": "The Studio",
+          "location": "West building \u00b7 Level 1",
+          "capacity": 4,
+          "active": true
+        }
+      ],
+      "total": 3,
+      "limit": 20,
+      "offset": 0
+    }
+  },
+  {
+    "path": "/api/v1/rooms?starts_at=2026-10-21T13%3A00%3A00%2B11%3A00&ends_at=2026-10-21T14%3A00%3A00%2B11%3A00",
+    "status": 200,
+    "body": {
+      "items": [
+        {
+          "id": "10000000-0000-4000-8000-000000000051",
+          "name": "Synthetic development room",
+          "location": "Local fixture \u2014 not university hours",
+          "capacity": 4,
+          "active": true,
+          "available": true
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000002",
+          "name": "The Forum",
+          "location": "North building \u00b7 Level 2",
+          "capacity": 8,
+          "active": true,
+          "available": false
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000001",
+          "name": "The Studio",
+          "location": "West building \u00b7 Level 1",
+          "capacity": 4,
+          "active": true,
+          "available": false
+        }
+      ],
+      "total": 3,
+      "limit": 20,
+      "offset": 0
+    }
+  },
+  {
+    "path": "/api/v1/rooms?starts_at=2026-10-21T13%3A00%3A00%2B11%3A00&ends_at=2026-10-21T16%3A00%3A00%2B11%3A00",
+    "status": 422,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Choose a duration from 30 minutes to two hours.",
+        "request_id": "64332b7d-99c1-4643-8c41-fc00c5b4a004",
+        "details": [
+          {
+            "field": "query.interval",
+            "code": "booking_policy",
+            "message": "Choose a duration from 30 minutes to two hours."
+          }
+        ]
+      }
+    }
+  }
+]

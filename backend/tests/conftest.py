@@ -43,7 +43,8 @@ def clean_database(db_engine: Engine) -> Iterator[None]:
             text(
                 "TRUNCATE TABLE account_attempts, auth_sessions, audit_events, "
                 "external_identities, "
-                "application_users, bookings, rooms"
+                "application_users, bookings, room_exception_hours, room_date_exceptions, "
+                "room_weekly_hours, room_closures, rooms"
             )
         )
     try:
@@ -54,7 +55,8 @@ def clean_database(db_engine: Engine) -> Iterator[None]:
                 text(
                     "TRUNCATE TABLE account_attempts, auth_sessions, audit_events, "
                     "external_identities, "
-                    "application_users, bookings, rooms"
+                    "application_users, bookings, room_exception_hours, room_date_exceptions, "
+                    "room_weekly_hours, room_closures, rooms"
                 )
             )
 

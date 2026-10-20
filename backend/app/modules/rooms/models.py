@@ -18,3 +18,6 @@ class Room(Base):
     location: Mapped[str] = mapped_column(String(200), nullable=False)
     capacity: Mapped[int] = mapped_column(Integer, nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+    hours_confirmed: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
