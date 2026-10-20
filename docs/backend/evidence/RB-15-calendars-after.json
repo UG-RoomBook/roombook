@@ -1,0 +1,7 @@
+{
+  "revision": "0005",
+  "rooms": 3,
+  "bookings": 0,
+  "active_ongoing_or_future_bookings": 0,
+  "rooms_without_confirmed_hours": 2
+}
