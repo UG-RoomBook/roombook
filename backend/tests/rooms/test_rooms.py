@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
@@ -11,6 +12,8 @@ from sqlalchemy.orm import Session
 from app.core.config import Settings
 from app.dependencies import get_session
 from app.main import create_app
+from app.modules.availability.models import WeeklyHours
+from app.modules.availability.policy import current_time
 from app.modules.bookings.models import Booking
 from app.modules.rooms.models import Room
 
@@ -25,13 +28,23 @@ def room_client(db_session: Session, database_url: str) -> Iterator[TestClient]:
         yield db_session
 
     application.dependency_overrides[get_session] = session_override
+    application.dependency_overrides[current_time] = lambda: datetime(2026, 10, 18, tzinfo=UTC)
     with TestClient(application) as client:
         yield client
 
 
 def add_room(session: Session, name: str, *, active: bool = True) -> Room:
-    room = Room(id=uuid4(), name=name, location="West Wing", capacity=4, active=active)
+    room = Room(
+        id=uuid4(), name=name, location="West Wing", capacity=4, active=active, hours_confirmed=True
+    )
     session.add(room)
+    session.flush()
+    session.add_all(
+        [
+            WeeklyHours(room_id=room.id, weekday=day, start_minute=0, end_minute=1440)
+            for day in range(7)
+        ]
+    )
     session.flush()
     return room
 
@@ -96,7 +109,7 @@ def test_empty_room_list_has_a_complete_pagination_envelope(
         ("2026-10-19T13:00:00+11:00", "2026-10-19T14:00:00+11:00", False),
         ("2026-10-19T12:30:00+11:00", "2026-10-19T13:30:00+11:00", False),
         ("2026-10-19T13:30:00+11:00", "2026-10-19T14:30:00+11:00", False),
-        ("2026-10-19T12:00:00+11:00", "2026-10-19T15:00:00+11:00", False),
+        ("2026-10-19T12:30:00+11:00", "2026-10-19T14:30:00+11:00", False),
         ("2026-10-19T13:15:00+11:00", "2026-10-19T13:45:00+11:00", False),
         ("2026-10-19T02:00:00Z", "2026-10-19T03:00:00Z", False),
     ],
@@ -160,6 +173,8 @@ def test_available_room_is_not_blocked_by_another_rooms_booking(
 def test_offset_equivalent_requests_match_across_dst(
     room_client: TestClient, db_session: Session
 ) -> None:
+    assert isinstance(room_client.app, FastAPI)
+    room_client.app.dependency_overrides[current_time] = lambda: datetime(2026, 4, 4, tzinfo=UTC)
     studio = add_room(db_session, "Studio")
     add_booking(
         db_session,
@@ -180,9 +195,8 @@ def test_offset_equivalent_requests_match_across_dst(
         params={"starts_at": "2026-04-04T15:30:00Z", "ends_at": "2026-04-04T16:00:00Z"},
     )
 
-    assert local_response.status_code == utc_response.status_code == 200
-    assert local_response.json() == utc_response.json()
-    assert local_response.json()["items"][0]["available"] is False
+    assert local_response.status_code == utc_response.status_code == 422
+    assert local_response.json()["error"]["code"] == utc_response.json()["error"]["code"]
 
 
 def test_pagination_is_stable_and_total_includes_unavailable_rooms(
@@ -212,10 +226,11 @@ def test_pagination_is_stable_and_total_includes_unavailable_rooms(
     assert all(response.json()["total"] == 3 for response in [first, second, repeated])
 
 
-def test_availability_uses_two_queries_for_a_page(
-    room_client: TestClient, db_session: Session, db_engine: Engine
+@pytest.mark.parametrize("count", [1, 25, 100])
+def test_availability_uses_six_queries_for_a_page(
+    room_client: TestClient, db_session: Session, db_engine: Engine, count: int
 ) -> None:
-    for index in range(25):
+    for index in range(count):
         add_room(db_session, f"Room {index:02}")
     statements: list[str] = []
 
@@ -237,16 +252,47 @@ def test_availability_uses_two_queries_for_a_page(
             params={
                 "starts_at": "2026-10-19T13:00:00+11:00",
                 "ends_at": "2026-10-19T14:00:00+11:00",
-                "limit": 25,
+                "limit": count,
             },
         )
     finally:
         event.remove(db_engine, "before_cursor_execute", record_statement)
 
     assert response.status_code == 200
-    assert len(response.json()["items"]) == 25
-    assert len(statements) == 2
-    assert "EXISTS" in statements[1]
+    assert len(response.json()["items"]) == count
+    assert len(statements) == 6
+
+
+def test_unconfirmed_room_is_unavailable_but_metadata_is_preserved(
+    room_client: TestClient, db_session: Session
+) -> None:
+    room = add_room(db_session, "Unconfirmed")
+    room.hours_confirmed = False
+    db_session.flush()
+    response = room_client.get(
+        "/api/v1/rooms",
+        params={"starts_at": "2026-10-19T02:00Z", "ends_at": "2026-10-19T03:00Z"},
+    )
+    assert response.status_code == 200
+    assert response.json()["items"][0]["available"] is False
+    assert "available" not in room_client.get("/api/v1/rooms").json()["items"][0]
+
+
+@pytest.mark.parametrize(
+    ("start", "end"),
+    [
+        ("2026-10-18T00:00Z", "2026-10-18T01:00Z"),  # Now, not future.
+        ("2026-11-01T00:15Z", "2026-11-01T01:15Z"),  # Beyond fourteen elapsed days.
+        ("2026-10-19T02:01Z", "2026-10-19T03:01Z"),
+        ("2026-10-19T02:00Z", "2026-10-19T02:15Z"),
+        ("2026-10-19T02:00Z", "2026-10-19T05:00Z"),
+    ],
+)
+def test_api_enforces_shared_booking_policy(room_client: TestClient, start: str, end: str) -> None:
+    response = room_client.get("/api/v1/rooms", params={"starts_at": start, "ends_at": end})
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert response.json()["error"]["details"][0]["code"] == "booking_policy"
 
 
 @pytest.mark.parametrize(
