@@ -258,7 +258,9 @@ jobs:
           # Share the database container's network namespace so PostgreSQL is on
           # localhost, as on a developer machine: the synthetic-calendar seed
           # refuses any database host other than localhost.
-          db=$(docker compose -p "$PROJECT" -f deploy/compose/testing.yml ps -q db)
+          db=$(docker ps -q --filter "label=com.docker.compose.project=$PROJECT" \
+                            --filter "label=com.docker.compose.service=db")
+          [[ -n "$db" ]] || { echo "::error::Testing database container not found"; exit 1; }
           docker run --rm --network "container:$db" -v "$PWD/reports:/reports" \
             -e ROOMBOOK_TEST_DATABASE_URL=postgresql+psycopg://roombook:roombook-testing@localhost:5432/roombook_test \
             "roombook-backend-tests:$GITHUB_SHA" \
