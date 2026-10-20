@@ -21,7 +21,7 @@ output "site_hosts" {
 }
 
 output "ops_bucket" {
-  value = aws_s3_bucket.ops.bucket
+  value = local.ops_bucket
 }
 
 output "alert_topic_arn" {

@@ -45,10 +45,8 @@ jobs:
 
       - name: Terraform validate (no backend, no credentials)
         run: |
-          for dir in infra/terraform infra/terraform/bootstrap; do
-            docker run --rm -v "$PWD:/w" -w "/w/$dir" -e TF_IN_AUTOMATION=1 "$TERRAFORM_IMAGE" init -backend=false -input=false >/dev/null
-            docker run --rm -v "$PWD:/w" -w "/w/$dir" -e TF_IN_AUTOMATION=1 "$TERRAFORM_IMAGE" validate
-          done
+          docker run --rm -v "$PWD:/w" -w /w/infra/terraform -e TF_IN_AUTOMATION=1 "$TERRAFORM_IMAGE" init -backend=false -input=false >/dev/null
+          docker run --rm -v "$PWD:/w" -w /w/infra/terraform -e TF_IN_AUTOMATION=1 "$TERRAFORM_IMAGE" validate
 
       - name: Ansible lint (production profile)
         run: |
@@ -58,7 +56,7 @@ jobs:
              && ansible-lint --offline site.yml'
 
       - name: ShellCheck deployment scripts
-        run: docker run --rm -v "$PWD:/w" -w /w "$SHELLCHECK_IMAGE" deploy/scripts/deploy.sh deploy/scripts/backup.sh deploy/scripts/restore-drill.sh
+        run: docker run --rm -v "$PWD:/w" -w /w "$SHELLCHECK_IMAGE" deploy/scripts/deploy.sh deploy/scripts/backup.sh deploy/scripts/restore-drill.sh infra/scripts/bootstrap.sh
 
       - name: Workflow syntax
         run: docker run --rm -v "$PWD:/repo" -w /repo "$ACTIONLINT_IMAGE" -color

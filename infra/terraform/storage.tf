@@ -1,24 +1,25 @@
 # Operations bucket: the Ansible bundle the hosts configure themselves from,
 # database backups and archived evidence. Private, versioned and encrypted.
+#
+# The bucket itself is created by infra/scripts/bootstrap.sh: Learner Lab
+# denies s3:GetBucketObjectLockConfiguration, which the provider calls when it
+# reads an aws_s3_bucket resource. Terraform manages its configuration below.
 
 data "aws_caller_identity" "current" {}
 
-resource "aws_s3_bucket" "ops" {
-  bucket = "${var.name}-ops-${data.aws_caller_identity.current.account_id}"
-  # Backups live here; `terraform destroy` refuses until the bucket is emptied
-  # deliberately after the evidence has been archived.
-  force_destroy = false
+locals {
+  ops_bucket = "${var.name}-ops-${data.aws_caller_identity.current.account_id}"
 }
 
 resource "aws_s3_bucket_versioning" "ops" {
-  bucket = aws_s3_bucket.ops.id
+  bucket = local.ops_bucket
   versioning_configuration {
     status = "Enabled"
   }
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "ops" {
-  bucket = aws_s3_bucket.ops.id
+  bucket = local.ops_bucket
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"
@@ -27,7 +28,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "ops" {
 }
 
 resource "aws_s3_bucket_public_access_block" "ops" {
-  bucket                  = aws_s3_bucket.ops.id
+  bucket                  = local.ops_bucket
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -35,7 +36,7 @@ resource "aws_s3_bucket_public_access_block" "ops" {
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "ops" {
-  bucket = aws_s3_bucket.ops.id
+  bucket = local.ops_bucket
 
   rule {
     id     = "expire-old-backups"
@@ -73,7 +74,7 @@ data "archive_file" "ansible" {
 }
 
 resource "aws_s3_object" "ansible" {
-  bucket      = aws_s3_bucket.ops.id
+  bucket      = local.ops_bucket
   key         = "ansible/ansible.zip"
   source      = data.archive_file.ansible.output_path
   source_hash = data.archive_file.ansible.output_base64sha256

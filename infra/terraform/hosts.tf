@@ -57,7 +57,7 @@ resource "aws_instance" "host" {
   user_data = templatefile("${path.module}/user_data.sh.tftpl", {
     role       = each.key
     region     = var.region
-    ops_bucket = aws_s3_bucket.ops.bucket
+    ops_bucket = local.ops_bucket
     repository = var.github_repository
   })
   user_data_replace_on_change = false

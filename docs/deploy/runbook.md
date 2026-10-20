@@ -42,16 +42,17 @@ Instances may be stopped when a session ends. Start the lab (and the instances,
 if stopped) at least 15 minutes before a demonstration; the Elastic IPs keep
 the same addresses, and the runners reconnect by themselves.
 
-## 1. Create the state bucket (once)
+## 1. Create the two S3 buckets (once)
 
 ```powershell
-cd infra\terraform\bootstrap
-terraform init
-terraform apply
-cd ..
+.\infra\scripts\bootstrap.ps1      # or infra/scripts/bootstrap.sh in AWS CloudShell
 ```
 
-Note the `state_bucket` output.
+It prints the state bucket name, `roombook-tfstate-<account id>`. The buckets
+are created with the AWS CLI because Learner Lab denies
+`s3:GetBucketObjectLockConfiguration`, which Terraform's `aws_s3_bucket`
+resource needs; Terraform then manages the operations bucket's versioning,
+encryption, public access block and lifecycle.
 
 ## 2. Create the environments
 

@@ -12,7 +12,8 @@ terraform {
     }
   }
 
-  # Remote state in the bucket created by ./bootstrap, with S3-native locking.
+  # Remote state in the bucket created by infra/scripts/bootstrap.sh, with
+  # S3-native locking.
   # The bucket name is account-specific, so pass it at init time:
   #   terraform init -backend-config="bucket=roombook-tfstate-<account id>"
   backend "s3" {
