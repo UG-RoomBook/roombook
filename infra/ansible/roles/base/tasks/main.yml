@@ -1,0 +1,117 @@
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - jq
+      - git
+      - unzip
+      - chrony
+      - unattended-upgrades
+      - acl  # lets Ansible run tasks as the runner user
+      - python3-debian  # needed by deb822_repository in the docker role
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Apply security updates automatically
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    mode: "0644"
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+
+- name: Use UTC on every host
+  ansible.builtin.command: timedatectl set-timezone UTC
+  changed_when: true
+  when: ansible_date_time.tz != 'UTC'
+
+- name: Create the journald drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    mode: "0755"
+
+- name: Keep the journal small
+  ansible.builtin.copy:
+    dest: /etc/systemd/journald.conf.d/roombook.conf
+    mode: "0644"
+    content: |
+      [Journal]
+      SystemMaxUse=500M
+  notify: Restart journald
+
+- name: Disable password and root SSH logins (operators use Session Manager)
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/60-roombook.conf
+    mode: "0644"
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+  notify: Reload ssh
+
+- name: Check for a swap file
+  ansible.builtin.stat:
+    path: /swapfile
+  register: base_swapfile
+
+- name: Create a swap file so image builds do not exhaust memory
+  ansible.builtin.shell: |
+    set -e
+    fallocate -l {{ swap_size_mb }}M /swapfile
+    chmod 600 /swapfile
+    mkswap /swapfile
+  args:
+    executable: /bin/bash
+    creates: /swapfile
+
+- name: Enable the swap file at boot
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    line: "/swapfile none swap sw 0 0"
+    state: present
+
+- name: Turn swap on
+  ansible.builtin.command: swapon --all
+  changed_when: false
+
+- name: Create the RoomBook operations group
+  ansible.builtin.group:
+    name: "{{ roombook_group }}"
+    system: true
+
+- name: Create the GitHub Actions runner account
+  ansible.builtin.user:
+    name: "{{ runner_user }}"
+    system: true
+    shell: /bin/bash
+    home: /home/{{ runner_user }}
+    create_home: true
+    groups: ["{{ roombook_group }}"]
+    append: true
+
+- name: Create configuration and data directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: root
+    group: "{{ roombook_group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: /etc/roombook, mode: "0750" }
+    - { path: /srv/roombook, mode: "0775" }
+
+- name: Describe this host for scripts and workflows
+  ansible.builtin.copy:
+    dest: /etc/roombook/site.env
+    owner: root
+    group: "{{ roombook_group }}"
+    mode: "0640"
+    content: |
+      # Managed by Ansible (infra/ansible). Read by deploy/scripts/*.sh.
+      ROOMBOOK_ROLE={{ host_role }}
+      SITE_HOST={{ site_host }}
+      AWS_REGION={{ aws_region }}
+      OPS_BUCKET={{ ops_bucket }}

@@ -1,0 +1,49 @@
+# Applied locally on each host by /usr/local/sbin/roombook-configure (installed
+# by the Terraform user data). Re-running it on a correct host changes nothing.
+#
+#   host_role: ci | test | production   (from the instance's Role tag)
+- name: Configure a RoomBook host
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+
+  pre_tasks:
+    - name: Check the host role
+      ansible.builtin.assert:
+        that: host_role in ['ci', 'test', 'production']
+        fail_msg: "host_role must be ci, test or production, got {{ host_role | default('nothing') }}"
+
+    - name: Get an IMDSv2 session token
+      ansible.builtin.uri:
+        url: http://169.254.169.254/latest/api/token
+        method: PUT
+        headers:
+          X-aws-ec2-metadata-token-ttl-seconds: "300"
+        return_content: true
+      register: imds_token
+      changed_when: false
+
+    - name: Read this host's public hostname tag
+      ansible.builtin.uri:
+        url: http://169.254.169.254/latest/meta-data/tags/instance/SiteHost
+        headers:
+          X-aws-ec2-metadata-token: "{{ imds_token.content }}"
+        return_content: true
+      register: site_host_tag
+      changed_when: false
+      failed_when: false
+
+    - name: Remember the site hostname
+      ansible.builtin.set_fact:
+        site_host: "{{ (site_host_tag.content | default('none')) | trim if site_host_tag.status == 200 else 'none' }}"
+
+  roles:
+    - base
+    - docker
+    - agents
+    - role: runtime
+      when: host_role in ['test', 'production']
+    - runner

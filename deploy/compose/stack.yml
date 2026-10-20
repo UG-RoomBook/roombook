@@ -1,0 +1,83 @@
+# RoomBook runtime for one persistent environment (Staging on the Test host,
+# Production on the Production host), per ADR-012. deploy/scripts/deploy.sh
+# runs it as project roombook-<environment> and supplies:
+#
+#   ROOMBOOK_IMAGE     the validated image, pinned by digest (ghcr.io/...@sha256:...)
+#   ROOMBOOK_ENV_FILE  /etc/roombook/<environment>.env (database password and
+#                      app settings, written by Ansible from SSM; never in Git)
+#   SITE_HOST          from /etc/roombook/site.env
+#
+# Only Caddy publishes ports. The database is on an internal network with no
+# route outside the host.
+
+services:
+  db:
+    image: postgres:17.11@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
+    restart: unless-stopped
+    env_file: ["${ROOMBOOK_ENV_FILE:?set by deploy.sh}"]
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roombook -d roombook"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    shm_size: 128mb
+    mem_limit: 512m
+
+  app:
+    image: "${ROOMBOOK_IMAGE:?set by deploy.sh}"
+    restart: unless-stopped
+    env_file: ["${ROOMBOOK_ENV_FILE:?set by deploy.sh}"]
+    # Caddy is the only client, so forwarded headers can be trusted; the app
+    # then sees https and the real client address (needed for secure cookies).
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --proxy-headers
+      - --forwarded-allow-ips
+      - "*"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [backend, edge]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
+    # The image's HEALTHCHECK polls /health; deploy.sh additionally checks
+    # /ready and /version before declaring the release live.
+
+  caddy:
+    image: caddy:2.11.7@sha256:685ae3d7c34d9b5f8caeddc5d14051db7bbd88ff1f5a2fa0c16bd8ca328fb7af
+    restart: unless-stopped
+    environment:
+      SITE_HOST: "${SITE_HOST:?set in /etc/roombook/site.env}"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [edge]
+    depends_on: [app]
+    mem_limit: 128m
+
+volumes:
+  db-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  backend:
+    internal: true
+  edge: {}

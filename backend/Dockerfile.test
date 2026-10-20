@@ -1,0 +1,18 @@
+# Backend test runner for the Test server (ADR-012: required unit and
+# integration tests run there against PostgreSQL before any release).
+# Built from the candidate's own source, so tests match the image under test.
+#
+#   docker build -f backend/Dockerfile.test -t roombook-backend-tests backend
+FROM ghcr.io/astral-sh/uv:0.13.1 AS uv
+
+FROM python:3.12.14-slim
+COPY --from=uv /uv /bin/uv
+ENV UV_PROJECT_ENVIRONMENT=/venv \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_LINK_MODE=copy \
+    PYTHONDONTWRITEBYTECODE=1
+WORKDIR /src
+COPY pyproject.toml uv.lock .python-version ./
+RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-install-project
+COPY . .
+CMD ["uv", "run", "--locked", "pytest"]

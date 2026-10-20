@@ -1,0 +1,3 @@
+# Labels of the ADR-012 self-hosted runners (registered by infra/scripts/register-runners.ps1).
+self-hosted-runner:
+  labels: [ci, test, production]

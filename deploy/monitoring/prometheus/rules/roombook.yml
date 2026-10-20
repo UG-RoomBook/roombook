@@ -1,0 +1,60 @@
+# Alert thresholds follow the brief's operating targets: p95 latency under
+# 300 ms, 5xx under 1 %, CPU under 70 %, RAM under 80 %, free disk at least 20 %.
+groups:
+  - name: hosts
+    rules:
+      - alert: HostDown
+        expr: up{job="node"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ $labels.host }} host is not reporting metrics"
+
+      - alert: HostHighCpu
+        expr: 100 * (1 - avg by (host) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 70
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.host }} CPU above 70% for 10 minutes ({{ $value | humanize }}%)"
+
+      - alert: HostHighMemory
+        expr: 100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 80
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.host }} memory above 80% ({{ $value | humanize }}%)"
+
+      - alert: HostLowDisk
+        expr: 100 * node_filesystem_avail_bytes{mountpoint="/",fstype!="tmpfs"} / node_filesystem_size_bytes{mountpoint="/",fstype!="tmpfs"} < 20
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.host }} root disk below 20% free ({{ $value | humanize }}%)"
+
+  - name: application
+    rules:
+      - alert: AppDown
+        expr: up{job="roombook-app"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "Production RoomBook app is not answering /metrics"
+
+      - alert: AppHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(roombook_http_request_duration_seconds_bucket{route!="/metrics"}[5m]))
+          ) > 0.3
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Production p95 latency above 300 ms ({{ $value | humanizeDuration }})"
+
+      - alert: AppErrorRate
+        expr: |
+          sum(rate(roombook_http_requests_total{status=~"5.."}[5m]))
+            / clamp_min(sum(rate(roombook_http_requests_total[5m])), 1e-9) > 0.01
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "Production 5xx rate above 1% ({{ $value | humanizePercentage }})"

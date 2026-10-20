@@ -1,0 +1,105 @@
+name: Operations
+
+# Scheduled and on-demand operations on the persistent hosts:
+#   backup         nightly pg_dump of Production to the private S3 bucket
+#   restore-drill  restores that backup on the Test server into a throwaway
+#                  database and checks it (proves backups are usable)
+#   monitoring     deploys Prometheus, Alertmanager and Grafana on Production
+#                  whenever their configuration changes on main
+on:
+  schedule:
+    - cron: "30 16 * * *" # 03:30 Melbourne (AEDT)
+  push:
+    branches: [main]
+    paths:
+      - "deploy/monitoring/**"
+      - "deploy/compose/monitoring.yml"
+  workflow_dispatch:
+    inputs:
+      task:
+        description: Operation to run
+        required: true
+        type: choice
+        default: backup-and-drill
+        options: [backup-and-drill, monitoring]
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    name: Back up Production (Production server)
+    if: github.event_name == 'schedule' || inputs.task == 'backup-and-drill'
+    runs-on: production
+    timeout-minutes: 15
+    outputs:
+      key: ${{ steps.dump.outputs.key }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Dump and upload
+        id: dump
+        run: |
+          key=$(deploy/scripts/backup.sh production nightly)
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+          echo "Backup: \`$key\`" >> "$GITHUB_STEP_SUMMARY"
+
+  restore-drill:
+    name: Restore drill (Test server)
+    needs: backup
+    runs-on: test
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Restore into a throwaway database and verify
+        env:
+          KEY: ${{ needs.backup.outputs.key }}
+        run: |
+          result=$(deploy/scripts/restore-drill.sh "$KEY")
+          echo "$result"
+          {
+            echo "### Restore drill"
+            echo '```json'
+            echo "$result"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  monitoring:
+    name: Deploy monitoring (Production server)
+    if: github.event_name == 'push' || inputs.task == 'monitoring'
+    runs-on: production
+    timeout-minutes: 15
+    concurrency:
+      group: deploy-monitoring
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Start or update the monitoring stack
+        run: |
+          docker network inspect roombook-production_backend >/dev/null 2>&1 || {
+            echo "::error::Deploy the application to Production first; monitoring joins its network."; exit 1; }
+          # Run from a stable copy: the runner workspace changes with every job.
+          target=/srv/roombook/monitoring
+          mkdir -p "$target/compose"
+          rm -rf "$target/monitoring.new"
+          cp -r deploy/monitoring "$target/monitoring.new"
+          rm -rf "$target/monitoring" && mv "$target/monitoring.new" "$target/monitoring"
+          cp deploy/compose/monitoring.yml "$target/compose/monitoring.yml"
+          docker compose -p roombook-monitoring -f "$target/compose/monitoring.yml" up -d --wait --remove-orphans
+          curl -fsS -X POST http://127.0.0.1:9090/-/reload
+      - name: Check every scrape target is up
+        run: |
+          for _ in $(seq 1 12); do
+            down=$(curl -fsS http://127.0.0.1:9090/api/v1/targets | jq -r '.data.activeTargets[] | select(.health != "up") | "\(.labels.job) \(.labels.host // "") \(.lastError)"')
+            [[ -z "$down" ]] && break
+            sleep 10
+          done
+          curl -fsS http://127.0.0.1:9090/api/v1/targets \
+            | jq -r '.data.activeTargets[] | "| \(.labels.job) | \(.labels.host // "-") | \(.health) |"' \
+            | { echo "| Job | Host | Health |"; echo "|---|---|---|"; cat; } >> "$GITHUB_STEP_SUMMARY"
+          if [[ -n "$down" ]]; then echo "::error::Targets down:"; echo "$down"; exit 1; fi

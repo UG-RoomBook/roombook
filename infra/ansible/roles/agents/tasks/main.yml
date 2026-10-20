@@ -1,0 +1,23 @@
+# node-exporter (host CPU, RAM, disk I/O, network) and cAdvisor (per-container
+# usage) on every host. The security group only lets Prometheus on Production
+# reach ports 9100 and 8080, over the private network.
+- name: Create the agents directory
+  ansible.builtin.file:
+    path: /srv/roombook/agents
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Write the agents Compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: /srv/roombook/agents/compose.yml
+    mode: "0644"
+  register: agents_compose
+
+- name: Start or update the agents
+  ansible.builtin.command:
+    cmd: docker compose -p roombook-agents -f /srv/roombook/agents/compose.yml up -d --remove-orphans
+  register: agents_up
+  changed_when: "'Started' in agents_up.stderr or 'Recreated' in agents_up.stderr or 'Created' in agents_up.stderr"

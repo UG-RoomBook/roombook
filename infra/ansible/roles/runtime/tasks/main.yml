@@ -1,0 +1,94 @@
+# Runtime configuration for the persistent environments on this host:
+# Staging on the Test host, Production on the Production host.
+#
+# Secrets never come from Git. The database password is generated here once and
+# kept on the host. Application secrets (Supabase, session encryption key and
+# so on) are read from SSM Parameter Store under /roombook/<environment>/app/,
+# where the parameter name becomes the variable name, for example
+# /roombook/production/app/ROOMBOOK_AUTH_ENABLED.
+
+- name: Create the private secrets directory
+  ansible.builtin.file:
+    path: /etc/roombook/secrets
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Generate each environment's database password once
+  ansible.builtin.shell: |
+    set -euo pipefail
+    umask 077
+    openssl rand -hex 24 > /etc/roombook/secrets/{{ item }}-postgres-password
+  args:
+    executable: /bin/bash
+    creates: /etc/roombook/secrets/{{ item }}-postgres-password
+  loop: "{{ environments_by_role[host_role] }}"
+
+- name: Read the database passwords
+  ansible.builtin.slurp:
+    src: /etc/roombook/secrets/{{ item }}-postgres-password
+  loop: "{{ environments_by_role[host_role] }}"
+  register: runtime_db_passwords
+  no_log: true
+
+- name: Read application settings from SSM Parameter Store
+  ansible.builtin.command:
+    argv:
+      - "{{ aws_cli }}"
+      - ssm
+      - get-parameters-by-path
+      - --region
+      - "{{ aws_region }}"
+      - --path
+      - "/roombook/{{ item }}/app/"
+      - --with-decryption
+      - --output
+      - json
+  loop: "{{ environments_by_role[host_role] }}"
+  register: runtime_app_parameters
+  changed_when: false
+  failed_when: false
+  no_log: true
+
+- name: Create each environment's state directory
+  ansible.builtin.file:
+    path: /srv/roombook/{{ item }}
+    state: directory
+    owner: "{{ runner_user }}"
+    group: "{{ roombook_group }}"
+    mode: "0770"
+  loop: "{{ environments_by_role[host_role] }}"
+
+- name: Write each environment's runtime file
+  ansible.builtin.template:
+    src: environment.env.j2
+    dest: /etc/roombook/{{ env_item.0 }}.env
+    owner: root
+    group: "{{ roombook_group }}"
+    mode: "0640"
+  loop: "{{ environments_by_role[host_role] | zip(runtime_db_passwords.results, runtime_app_parameters.results) | list }}"
+  loop_control:
+    loop_var: env_item
+    label: "{{ env_item.0 }}"
+  vars:
+    environment_name: "{{ env_item.0 }}"
+    postgres_password: "{{ env_item.1.content | b64decode | trim }}"
+    app_settings: >-
+      {{ (env_item.2.stdout | from_json).Parameters | default([])
+         if (env_item.2.rc | default(1)) == 0 else [] }}
+  no_log: true
+
+- name: Generate the Grafana administrator password once
+  ansible.builtin.shell: |
+    set -euo pipefail
+    umask 077
+    openssl rand -base64 18 > /etc/roombook/secrets/grafana-admin-password
+  args:
+    executable: /bin/bash
+    creates: /etc/roombook/secrets/grafana-admin-password
+  when: host_role == 'production'
+
+- name: Read the Grafana and alerting secrets
+  ansible.builtin.include_tasks: monitoring.yml
+  when: host_role == 'production'
