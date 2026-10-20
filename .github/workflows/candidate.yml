@@ -269,7 +269,8 @@ jobs:
 
       - name: Frontend unit tests
         run: |
-          docker run --rm -v "$PWD/frontend:/src" -w /src -v "$PWD/reports:/reports" \
+          # Mount the whole checkout: some frontend tests read design baselines in docs/.
+          docker run --rm -v "$PWD:/src" -w /src/frontend -v "$PWD/reports:/reports" \
             node:24.19.0-slim@sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df \
             sh -c 'npm install --global npm@11.6.2 >/dev/null && npm ci --no-audit --no-fund >/dev/null \
                    && npm run test:coverage && cp -r coverage /reports/frontend-coverage'
