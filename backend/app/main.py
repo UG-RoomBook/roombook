@@ -5,6 +5,7 @@ from fastapi import FastAPI
 
 from app.core.config import Settings
 from app.core.errors import ErrorResponse, install_error_handlers
+from app.core.frontend import install_frontend
 from app.db.session import Database
 from app.modules.identity.account_router import router as account_router
 from app.modules.identity.crypto import TokenCipher
@@ -70,6 +71,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.include_router(rooms_router)
     application.include_router(identity_router)
     application.include_router(account_router)
+    # Must stay last: the React fallback only handles paths no API route matched.
+    install_frontend(application, configured.static_dir)
     return application
 
 

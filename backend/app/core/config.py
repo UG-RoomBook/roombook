@@ -1,3 +1,4 @@
+from pathlib import Path
 from urllib.parse import urlsplit
 
 from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
@@ -23,6 +24,8 @@ class Settings(BaseSettings):
     environment: str = "development"
     version: str = "0.1.0"
     commit_sha: str = "unknown"
+    # Directory holding the built React app; set in the container image only.
+    static_dir: Path | None = None
     auth_enabled: bool = False
     auth_supabase_url: str | None = None
     auth_supabase_publishable_key: SecretStr | None = Field(default=None, repr=False)

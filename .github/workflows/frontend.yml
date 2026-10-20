@@ -1,5 +1,7 @@
 name: Frontend checks
 
+# Pull requests run these checks directly. Pushes to main run them through the
+# Pipeline workflow (workflow_call), so a failing check stops the image build.
 on:
   pull_request:
     paths:
@@ -8,14 +10,7 @@ on:
       - "docs/design/baselines/**"
       - ".github/workflows/frontend.yml"
       - ".gitattributes"
-  push:
-    branches: [main]
-    paths:
-      - "frontend/**"
-      - "backend/openapi.json"
-      - "docs/design/baselines/**"
-      - ".github/workflows/frontend.yml"
-      - ".gitattributes"
+  workflow_call:
 
 permissions:
   contents: read
