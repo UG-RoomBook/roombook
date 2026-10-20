@@ -255,8 +255,12 @@ jobs:
       - name: Backend unit and integration tests (real PostgreSQL)
         run: |
           docker build --quiet -f backend/Dockerfile.test -t "roombook-backend-tests:$GITHUB_SHA" backend >/dev/null
-          docker run --rm --network "${PROJECT}_default" -v "$PWD/reports:/reports" \
-            -e ROOMBOOK_TEST_DATABASE_URL=postgresql+psycopg://roombook:roombook-testing@db:5432/roombook_test \
+          # Share the database container's network namespace so PostgreSQL is on
+          # localhost, as on a developer machine: the synthetic-calendar seed
+          # refuses any database host other than localhost.
+          db=$(docker compose -p "$PROJECT" -f deploy/compose/testing.yml ps -q db)
+          docker run --rm --network "container:$db" -v "$PWD/reports:/reports" \
+            -e ROOMBOOK_TEST_DATABASE_URL=postgresql+psycopg://roombook:roombook-testing@localhost:5432/roombook_test \
             "roombook-backend-tests:$GITHUB_SHA" \
             uv run --locked pytest --cov=app --cov-report=term --cov-report=xml:/reports/backend-coverage.xml \
               --junitxml=/reports/backend-junit.xml
