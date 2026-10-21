@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // BASE_URL is the system under test: the candidate in its disposable Testing
-// stack (http://app:8000) or Staging over HTTPS. Never run these against mocks.
+// stack (http://localhost:8000 from inside the app container's network) or
+// Staging over HTTPS. Never run these against mocks.
 const baseURL = process.env.BASE_URL;
 if (!baseURL) {
   throw new Error('Set BASE_URL to the RoomBook instance under test.');

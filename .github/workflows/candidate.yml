@@ -278,8 +278,13 @@ jobs:
       - name: Browser journeys against the candidate
         run: |
           docker build --quiet -t roombook-e2e tests/e2e >/dev/null
-          docker run --rm --network "${PROJECT}_default" -v "$PWD/reports/e2e-testing:/e2e/results" \
-            -e BASE_URL=http://app:8000 -e EXPECTED_COMMIT="$GITHUB_SHA" -e EXPECTED_ENVIRONMENT=testing \
+          # Browse on localhost inside the app container's network: Chromium forces
+          # HTTPS for the hostname "app" because .app is an HSTS-preloaded domain.
+          app=$(docker ps -q --filter "label=com.docker.compose.project=$PROJECT" \
+                             --filter "label=com.docker.compose.service=app")
+          [[ -n "$app" ]] || { echo "::error::Testing app container not found"; exit 1; }
+          docker run --rm --network "container:$app" -v "$PWD/reports/e2e-testing:/e2e/results" \
+            -e BASE_URL=http://localhost:8000 -e EXPECTED_COMMIT="$GITHUB_SHA" -e EXPECTED_ENVIRONMENT=testing \
             roombook-e2e
 
       - name: Keep test reports
