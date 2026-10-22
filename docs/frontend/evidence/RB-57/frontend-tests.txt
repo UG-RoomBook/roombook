@@ -1,0 +1,56 @@
+Running node v24.21.0 (npm v11.19.0)
+
+> @roombook/frontend@0.1.0 test:coverage
+> vitest run --coverage
+
+
+ RUN  v5.0.5 /home/mudabbir/Desktop/roombook/roombook/frontend
+      Coverage enabled with v8
+
+
+ Test Files  13 passed (13)
+      Tests  145 passed (145)
+   Start at  14:19:29
+   Duration  12.68s (tests 53%, environment 29%, import 9%, setup 6%, worker 2%, transform 2%)
+
+Environment  jsdom was created 13 times · 9.77s total, 29% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   95.21 |     89.6 |   93.75 |    96.5 |                   
+ app               |   91.42 |    84.61 |   86.95 |   95.23 |                   
+  App.tsx          |      95 |    90.62 |     100 |     100 | 36,44,80          
+  Providers.tsx    |       0 |      100 |       0 |       0 | 6-15              
+  ...eProvider.tsx |   96.55 |    69.23 |    90.9 |     100 | 44,57             
+  theme-context.ts |    90.9 |    85.71 |     100 |     100 | 28                
+ features/accounts |   94.07 |    85.43 |   93.18 |   95.04 |                   
+  AccountPage.tsx  |   96.42 |    85.12 |     100 |    97.4 | 107-108           
+  api.ts           |   88.88 |       85 |   85.71 |   89.47 | 56,60,107-108     
+  session.ts       |     100 |       90 |     100 |     100 | 17                
+ features/bookings |   94.62 |    90.54 |   91.66 |   97.15 |                   
+  BookingsPage.tsx |   93.82 |    84.09 |    91.3 |   97.33 | 249,289           
+  ...okingPage.tsx |   92.53 |     92.3 |   89.47 |   95.31 | 17,142,154        
+  selection.ts     |     100 |    95.83 |     100 |     100 | 34                
+ features/rooms    |   97.53 |    90.97 |     100 |   97.33 |                   
+  FindRoomPage.tsx |    97.4 |    90.08 |     100 |   97.18 | 35-36             
+  RoomCard.tsx     |     100 |    95.65 |     100 |     100 | 21                
+ shared/api        |    95.5 |    88.88 |      95 |   95.18 |                   
+  client.ts        |   97.72 |    91.48 |     100 |   97.61 | 75                
+  queries.ts       |   91.89 |    82.35 |   88.23 |    90.9 | 75,137-139        
+ shared/dates      |     100 |    94.73 |     100 |     100 |                   
+  index.ts         |     100 |    94.73 |     100 |     100 | 110               
+ shared/ui         |   94.44 |    96.29 |   88.88 |   93.33 |                   
+  Button.tsx       |   93.33 |      100 |   83.33 |   91.66 | 48                
+  PageTitle.tsx    |     100 |     87.5 |     100 |     100 | 19                
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 95.21% ( 617/648 )
+Branches     : 89.6% ( 655/731 )
+Functions    : 93.75% ( 195/208 )
+Lines        : 96.5% ( 579/600 )
+================================================================================

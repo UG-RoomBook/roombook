@@ -1,0 +1,18 @@
+{
+  "mobile": {
+    "contentWidth": 360,
+    "endHeight": 44,
+    "height": 812,
+    "width": 375
+  },
+  "landscape": {
+    "contentWidth": 797,
+    "height": 375,
+    "width": 812
+  },
+  "desktop": {
+    "contentWidth": 1425,
+    "height": 900,
+    "width": 1440
+  }
+}

@@ -1,0 +1,115 @@
+[
+  {
+    "duration_minutes": 29,
+    "status": 422,
+    "response": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Choose a duration from 30 minutes to two hours.",
+        "request_id": "5f9ba210-e156-4caa-b034-a1cb21e4a50b",
+        "details": [
+          {
+            "field": "query.interval",
+            "code": "booking_policy",
+            "message": "Choose a duration from 30 minutes to two hours."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "duration_minutes": 30,
+    "status": 200,
+    "response": {
+      "items": [
+        {
+          "id": "10000000-0000-4000-8000-000000000051",
+          "name": "Synthetic development room",
+          "location": "Local fixture \u2014 not university hours",
+          "capacity": 4,
+          "active": true,
+          "available": true
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000002",
+          "name": "The Forum",
+          "location": "North building \u00b7 Level 2",
+          "capacity": 8,
+          "active": true,
+          "available": false
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000001",
+          "name": "The Studio",
+          "location": "West building \u00b7 Level 1",
+          "capacity": 4,
+          "active": true,
+          "available": false
+        }
+      ],
+      "total": 3,
+      "limit": 20,
+      "offset": 0
+    }
+  },
+  {
+    "duration_minutes": 120,
+    "status": 200,
+    "response": {
+      "items": [
+        {
+          "id": "10000000-0000-4000-8000-000000000051",
+          "name": "Synthetic development room",
+          "location": "Local fixture \u2014 not university hours",
+          "capacity": 4,
+          "active": true,
+          "available": true
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000002",
+          "name": "The Forum",
+          "location": "North building \u00b7 Level 2",
+          "capacity": 8,
+          "active": true,
+          "available": false
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000001",
+          "name": "The Studio",
+          "location": "West building \u00b7 Level 1",
+          "capacity": 4,
+          "active": true,
+          "available": false
+        }
+      ],
+      "total": 3,
+      "limit": 20,
+      "offset": 0
+    }
+  },
+  {
+    "duration_minutes": 121,
+    "status": 422,
+    "response": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Choose a duration from 30 minutes to two hours.",
+        "request_id": "af9a60b1-ec92-4e01-9557-524224bff4db",
+        "details": [
+          {
+            "field": "query.interval",
+            "code": "booking_policy",
+            "message": "Choose a duration from 30 minutes to two hours."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "check": "database readiness",
+    "status": 200,
+    "response": {
+      "status": "ready"
+    }
+  }
+]
