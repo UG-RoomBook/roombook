@@ -269,11 +269,13 @@ jobs:
 
       - name: Frontend unit tests
         run: |
+          # The Test server has 2 vCPUs and runs with coverage, so interaction-heavy
+          # tests can exceed vitest's 5 s default; Frontend checks keep the default.
           # Mount the whole checkout: some frontend tests read design baselines in docs/.
           docker run --rm -v "$PWD:/src" -w /src/frontend -v "$PWD/reports:/reports" \
             node:24.19.0-slim@sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df \
             sh -c 'npm install --global npm@11.6.2 >/dev/null && npm ci --no-audit --no-fund >/dev/null \
-                   && npm run test:coverage && cp -r coverage /reports/frontend-coverage'
+                   && npm run test:coverage -- --testTimeout=20000 && cp -r coverage /reports/frontend-coverage'
 
       - name: Browser journeys against the candidate
         run: |
