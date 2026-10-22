@@ -105,20 +105,6 @@ export function useBookingList(date: string, roomId?: string, pagination: Pagina
   });
 }
 
-export function useCreateBooking() {
-  const client = useQueryClient();
-  return useMutation({
-    mutationKey: ['bookings', 'create'],
-    mutationFn: api.createBooking,
-    retry: false,
-    onSettled: () =>
-      Promise.all([
-        client.invalidateQueries({ queryKey: queryKeys.rooms }),
-        client.invalidateQueries({ queryKey: queryKeys.bookings }),
-      ]),
-  });
-}
-
 export function useCancelBooking() {
   const client = useQueryClient();
   return useMutation({

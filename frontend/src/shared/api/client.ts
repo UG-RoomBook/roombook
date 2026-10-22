@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { client } from './generated/client.gen';
-import { getVersion, listRooms } from './generated/sdk.gen';
+import { createBooking, getVersion, listRooms } from './generated/sdk.gen';
 import { bookingListSchema, bookingSchema, provisionalBookings } from './provisional-bookings';
 import type { CreateBooking, Pagination } from './types';
+import { createClient } from './generated/client';
 
 export class ApiError extends Error {
   readonly status: number;
@@ -53,6 +54,28 @@ client.setConfig({
   fetch: (input, init) => globalThis.fetch(input, init),
 });
 
+export const createdBookingSchema = z.object({
+  id: z.string().uuid(),
+  owner_id: z.string().uuid(),
+  room_id: z.string().uuid(),
+  starts_at: z.string().datetime({ offset: true }),
+  ends_at: z.string().datetime({ offset: true }),
+  status: z.literal('active'),
+  created_at: z.string().datetime({ offset: true }),
+});
+export type CreatedBooking = z.infer<typeof createdBookingSchema>;
+export interface BookingSubmission {
+  body: CreateBooking;
+  ownerId: string;
+  csrfToken: string;
+  idempotencyKey: string;
+}
+const bookingClient = createClient({
+  baseUrl: globalThis.location?.origin || 'http://localhost',
+  credentials: 'same-origin',
+  fetch: (input, init) => globalThis.fetch(input, init),
+});
+
 interface ApiResult {
   data?: unknown;
   error?: unknown;
@@ -74,7 +97,7 @@ async function readResult<T>(
   } catch {
     throw new ApiError(
       mutation
-        ? 'The request outcome is uncertain. Refresh bookings before trying again.'
+        ? 'The request outcome is uncertain. Retry the same booking attempt to confirm it.'
         : 'The service could not be reached. Try again.',
       { uncertain: mutation },
     );
@@ -96,7 +119,11 @@ async function readResult<T>(
         uncertain:
           mutation &&
           !(parsed.success && parsed.data.error.code === 'FEATURE_NOT_AVAILABLE') &&
-          (!result.response || result.response.ok || result.response.status >= 500),
+          (!result.response ||
+            result.response.ok ||
+            result.response.status >= 500 ||
+            (parsed.success &&
+              ['REQUEST_IN_PROGRESS', 'BOOKING_BUSY'].includes(parsed.data.error.code))),
       },
     );
   }
@@ -136,13 +163,20 @@ export const api = {
       false,
       signal,
     ),
-  createBooking: (body: CreateBooking) =>
+  createBooking: ({ body, ownerId, csrfToken, idempotencyKey }: BookingSubmission) =>
     readResult(
-      (signal) => provisionalBookings.create(body, signal),
-      bookingSchema.refine(
+      (signal) =>
+        createBooking({
+          client: bookingClient,
+          body,
+          signal,
+          cache: 'no-store',
+          headers: { 'idempotency-key': idempotencyKey, 'X-CSRF-Token': csrfToken },
+        }),
+      createdBookingSchema.refine(
         (booking) =>
+          booking.owner_id === ownerId &&
           booking.room_id === body.room_id &&
-          booking.status === 'active' &&
           Date.parse(booking.starts_at) === Date.parse(body.starts_at) &&
           Date.parse(booking.ends_at) === Date.parse(body.ends_at),
       ),

@@ -1,0 +1,95 @@
+Running node v24.21.0 (npm v11.19.0)
+
+> @roombook/frontend@0.1.0 api:check
+> node scripts/check-api.mjs
+
+[90m@hey-api/openapi-ts v0.99.0[39m
+
+[90m[Job 1] [39m[90m~[39m [36mGenerating...[39m
+[90m[Job 1] [39m[36m  [1] [39m../backend/openapi.json
+[90m[Job 1] [39m[32m✓[39m [96m./../../../../../tmp/roombook-api-check-cIEgtJ[39m [90m· 4 files · 97ms[39m
+Generated API files match backend/openapi.json.
+
+> @roombook/frontend@0.1.0 format:check
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> @roombook/frontend@0.1.0 lint
+> eslint . --max-warnings 0
+
+
+> @roombook/frontend@0.1.0 typecheck
+> tsc -b
+
+
+> @roombook/frontend@0.1.0 build
+> tsc -b && vite build
+
+vite v7.3.7 building client environment for production...
+transforming...
+node_modules/zod/v4/core/regexes.js (74:0): A comment
+
+"/** Anchors a pattern source. The interpolation lives here rather than at the call site because
+ * esbuild will not drop a `@__PURE__` call whose own argument interpolates a variable, but it
+ * will drop `anchor(dateSource)`. Keeping it inline pinned `date` into every bundle. */"
+
+in "node_modules/zod/v4/core/regexes.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+node_modules/zod/v4/core/util.js (400:0): A comment
+
+"// Wrapped in a `@__PURE__` IIFE: esbuild never tree-shakes a top-level initializer that contains a member access on `Number`, so the bare object literal survived into every bundle."
+
+in "node_modules/zod/v4/core/util.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+✓ 2135 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                                   1.09 kB │ gzip:   0.54 kB
+dist/assets/space-grotesk-vietnamese-700-normal-DMty7AZE.woff2    4.20 kB
+dist/assets/space-grotesk-vietnamese-400-normal-B7xT_GF5.woff2    4.30 kB
+dist/assets/space-grotesk-vietnamese-600-normal-DUi7WF5p.woff2    4.31 kB
+dist/assets/space-grotesk-vietnamese-500-normal-BmEvtly_.woff2    4.32 kB
+dist/assets/space-grotesk-vietnamese-700-normal-Duxec5Rn.woff     5.59 kB
+dist/assets/space-grotesk-vietnamese-600-normal-D6zpsUhD.woff     5.70 kB
+dist/assets/space-grotesk-vietnamese-500-normal-BTqKIpxg.woff     5.72 kB
+dist/assets/space-grotesk-vietnamese-400-normal-BIWiOVfw.woff     5.73 kB
+dist/assets/dm-sans-latin-ext-400-normal-BtiwyxMk.woff2           7.36 kB
+dist/assets/dm-sans-latin-ext-600-normal-4vooXBpG.woff2           7.42 kB
+dist/assets/dm-sans-latin-ext-500-normal-BJfUCQsA.woff2           7.43 kB
+dist/assets/dm-sans-latin-ext-700-normal-CJIcxD6K.woff2           7.45 kB
+dist/assets/dm-sans-latin-ext-400-normal-BjWJ59Pq.woff            9.98 kB
+dist/assets/dm-sans-latin-ext-700-normal-BLI3TTWz.woff           10.01 kB
+dist/assets/dm-sans-latin-ext-600-normal-DRtaDpgU.woff           10.02 kB
+dist/assets/dm-sans-latin-ext-500-normal-DR84L5F-.woff           10.07 kB
+dist/assets/space-grotesk-latin-ext-700-normal-BQnZhY3m.woff2    11.99 kB
+dist/assets/space-grotesk-latin-ext-400-normal-CfP_5XZW.woff2    12.26 kB
+dist/assets/space-grotesk-latin-ext-500-normal-DUe3BAxM.woff2    12.27 kB
+dist/assets/space-grotesk-latin-ext-600-normal-DxxdqCpr.woff2    12.29 kB
+dist/assets/space-grotesk-latin-700-normal-RjhwGPKo.woff2        12.84 kB
+dist/assets/space-grotesk-latin-600-normal-DjKNqYRj.woff2        13.28 kB
+dist/assets/space-grotesk-latin-500-normal-lFbtlQH6.woff2        13.31 kB
+dist/assets/space-grotesk-latin-400-normal-CJ-V5oYT.woff2        13.39 kB
+dist/assets/dm-sans-latin-600-normal-Aqo67rzb.woff2              14.14 kB
+dist/assets/dm-sans-latin-400-normal-CW0RaeGs.woff2              14.20 kB
+dist/assets/dm-sans-latin-500-normal-B9HHJjqV.woff2              14.30 kB
+dist/assets/dm-sans-latin-700-normal-DvUfVpUG.woff2              14.35 kB
+dist/assets/space-grotesk-latin-700-normal-CwsQ-cCU.woff         16.42 kB
+dist/assets/space-grotesk-latin-ext-700-normal-HVCqSBdx.woff     16.46 kB
+dist/assets/space-grotesk-latin-ext-600-normal-VcznFIpX.woff     16.73 kB
+dist/assets/space-grotesk-latin-ext-400-normal-DRPE3kg4.woff     16.79 kB
+dist/assets/space-grotesk-latin-ext-500-normal-3dgZTiw9.woff     16.79 kB
+dist/assets/space-grotesk-latin-600-normal-BflQw4A9.woff         16.88 kB
+dist/assets/space-grotesk-latin-500-normal-CNSSEhBt.woff         16.99 kB
+dist/assets/space-grotesk-latin-400-normal-BnQMeOim.woff         17.00 kB
+dist/assets/dm-sans-latin-600-normal-BmdmIIQ2.woff               18.32 kB
+dist/assets/dm-sans-latin-400-normal-BwCSEQnW.woff               18.36 kB
+dist/assets/dm-sans-latin-700-normal-CUSSCpQX.woff               18.50 kB
+dist/assets/dm-sans-latin-500-normal-Dr3UlScf.woff               18.52 kB
+dist/assets/index-Buqd5Lvw.css                                   39.63 kB │ gzip:   8.01 kB
+dist/assets/index-nlqLplLN.js                                   678.93 kB │ gzip: 209.47 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.74s

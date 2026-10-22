@@ -18,8 +18,29 @@ export function bookingFeedback(error: unknown): BookingFeedback {
     return {
       title: 'Booking outcome not confirmed',
       message:
-        'The request may have completed. Check bookings before creating another booking for this room and time.',
+        'The request may have completed. Retry this saved attempt to confirm the original result. Keep this tab until the outcome is known.',
       uncertain: true,
+    };
+  }
+  if (
+    error instanceof ApiError &&
+    ['ATTEMPT_STORAGE', 'IDEMPOTENCY_MISMATCH'].includes(error.code)
+  ) {
+    return { title: 'Saved attempt needs attention', message: error.message, uncertain: false };
+  }
+  if (error instanceof ApiError && [401, 403, 429].includes(error.status)) {
+    return {
+      title:
+        error.status === 401
+          ? 'Sign in to book'
+          : error.status === 403
+            ? 'Booking access denied'
+            : 'Please wait before retrying',
+      message:
+        error.status === 403
+          ? 'A verified, active account and a valid session are required. Check your account and try again.'
+          : error.message,
+      uncertain: false,
     };
   }
   if (error instanceof ApiError && error.status === 409) {

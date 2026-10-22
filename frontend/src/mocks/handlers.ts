@@ -1,6 +1,14 @@
 import { http, HttpResponse } from 'msw';
 import { z } from 'zod';
 import type { Booking, Room } from '@/shared/api/types';
+export const mockSession = {
+  user: { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', role: 'Member' },
+  aal: 'aal1',
+  purpose: 'standard',
+  csrf_token: 'mock-csrf',
+  expires_at: '2026-10-30T00:00:00Z',
+};
+
 import { mockBookings, mockRooms } from './data';
 
 function error(status: number, code: string, message: string) {
@@ -37,6 +45,7 @@ function overlap(booking: Booking, start: string, end: string) {
 }
 
 export const handlers = [
+  http.get('*/api/v1/auth/session', () => HttpResponse.json(mockSession)),
   http.get('*/version', () =>
     HttpResponse.json({ commit_sha: 'mock-data', environment: 'development', version: '0.1.0' }),
   ),
@@ -124,7 +133,7 @@ export const handlers = [
       cancelled_at: null,
     };
     mockBookings.push(booking);
-    return HttpResponse.json(booking, { status: 201 });
+    return HttpResponse.json({ ...booking, owner_id: mockSession.user.id }, { status: 201 });
   }),
   http.post('*/api/v1/bookings/:id/cancel', ({ params }) => {
     const booking = mockBookings.find((item) => item.id === params.id);

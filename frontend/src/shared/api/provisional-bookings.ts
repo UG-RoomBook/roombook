@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { client } from './generated/client.gen';
 import type { Pagination } from './types';
 
-// Booking endpoints are not implemented by the current FastAPI service.
+// History and cancellation await RB-17/RB-18. Creation uses the real generated API.
 // This adapter preserves the reviewed UI's opt-in MSW demonstration and tests.
 // Replace it with generated operations when the booking API is implemented.
 export const bookingSchema = z.object({
@@ -16,7 +16,6 @@ export const bookingSchema = z.object({
 });
 
 export type Booking = z.infer<typeof bookingSchema>;
-export type CreateBooking = Pick<Booking, 'room_id' | 'starts_at' | 'ends_at'>;
 export interface BookingList {
   items: Booking[];
   total: number;
@@ -57,15 +56,6 @@ export const provisionalBookings = {
   ) =>
     isDemonstration()
       ? client.get({ url: '/api/v1/bookings', query: { ...query }, signal })
-      : unavailable(),
-  create: (body: CreateBooking, signal: AbortSignal) =>
-    isDemonstration()
-      ? client.post({
-          url: '/api/v1/bookings',
-          body,
-          signal,
-          headers: { 'Content-Type': 'application/json' },
-        })
       : unavailable(),
   cancel: (id: string, signal: AbortSignal) =>
     isDemonstration()

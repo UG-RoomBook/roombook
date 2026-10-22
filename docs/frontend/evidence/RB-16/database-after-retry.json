@@ -1,0 +1,5 @@
+{
+  "stage": "after-retry",
+  "bookings": 1,
+  "successful_requests": 1
+}

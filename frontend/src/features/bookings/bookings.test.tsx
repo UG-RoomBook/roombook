@@ -3,10 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HttpResponse, http } from 'msw';
 import { setupServer } from 'msw/node';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Link, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import type { Booking, Room } from '@/shared/api/types';
 import { BookingsPage } from './BookingsPage';
+import { mockSession } from '@/mocks/handlers';
+import { AccountPage } from '@/features/accounts/AccountPage';
+import { attemptSlot, loadAttempt } from './submission';
 import { ReviewBookingPage } from './ReviewBookingPage';
 
 const room: Room = {
@@ -34,6 +37,7 @@ let bookingReads: URL[] = [];
 let receivedBody: unknown;
 
 const server = setupServer(
+  http.get('*/api/v1/auth/session', () => HttpResponse.json(mockSession)),
   http.get('*/api/v1/rooms', () =>
     HttpResponse.json({ items: [room], total: 1, limit: 100, offset: 0 }),
   ),
@@ -53,7 +57,7 @@ const server = setupServer(
     postCount += 1;
     receivedBody = await request.json();
     records = [booking];
-    return HttpResponse.json(booking, { status: 201 });
+    return HttpResponse.json({ ...booking, owner_id: mockSession.user.id }, { status: 201 });
   }),
   http.post('*/api/v1/bookings/:id/cancel', () => {
     cancellationCount += 1;
@@ -96,6 +100,7 @@ function renderPage(path = reviewPath) {
       <MemoryRouter initialEntries={[path]}>
         <LocationProbe />
         <Routes>
+          <Route path="/account/*" element={<AccountPage />} />
           <Route path="/review" element={<ReviewBookingPage />} />
           <Route path="/bookings" element={<BookingsPage />} />
           <Route path="/" element={<h1>Find a room</h1>} />
@@ -138,7 +143,7 @@ describe('booking review', () => {
         receivedBody = await request.json();
         await pending;
         records = [booking];
-        return HttpResponse.json(booking, { status: 201 });
+        return HttpResponse.json({ ...booking, owner_id: mockSession.user.id }, { status: 201 });
       }),
     );
     renderPage();
@@ -155,11 +160,9 @@ describe('booking review', () => {
       ends_at: '2026-10-19T14:00:00+11:00',
     });
     await act(async () => release());
-    await screen.findByRole('heading', { name: 'Bookings', level: 1 });
-    expect(await screen.findByText(/Booking confirmed: The Studio/)).toHaveAttribute(
-      'role',
-      'status',
-    );
+    await screen.findByRole('heading', { name: 'Booking confirmed' });
+    expect(screen.getByText(booking.id)).toBeInTheDocument();
+    expect(bookingReads).toHaveLength(0);
     expect(postCount).toBe(1);
   });
 
@@ -193,47 +196,52 @@ describe('booking review', () => {
     );
   });
 
-  it('does not retry an uncertain gateway timeout and sends the user to check bookings', async () => {
+  it('reconciles a lost response after remount with the exact saved key even when availability is false', async () => {
     const user = userEvent.setup();
+    const keys: string[] = [];
     server.use(
-      http.post('*/api/v1/bookings', () => {
+      http.post('*/api/v1/bookings', ({ request }) => {
         postCount += 1;
-        return HttpResponse.json(
-          {
-            error: {
-              code: 'UPSTREAM_TIMEOUT',
-              message: 'The upstream request timed out.',
-            },
-          },
-          { status: 504 },
-        );
+        keys.push(request.headers.get('Idempotency-Key')!);
+        return postCount === 1
+          ? HttpResponse.json(
+              { error: { code: 'UPSTREAM_TIMEOUT', message: 'Lost response.' } },
+              { status: 504 },
+            )
+          : HttpResponse.json({ ...booking, owner_id: mockSession.user.id }, { status: 201 });
       }),
     );
-    renderPage();
+    const view = renderPage();
     await user.click(await screen.findByRole('button', { name: 'Confirm booking' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Booking outcome not confirmed');
-    expect(screen.getByRole('alert')).toHaveTextContent('The request may have completed.');
-    await waitFor(() =>
-      expect(screen.getByTestId('location')).toHaveTextContent('outcome=unknown'),
+    expect(postCount).toBe(1);
+    view.unmount();
+    server.use(
+      http.get('*/api/v1/rooms', () =>
+        HttpResponse.json({
+          items: [{ ...room, available: false }],
+          total: 1,
+          limit: 100,
+          offset: 0,
+        }),
+      ),
     );
-    expect(screen.queryByRole('button', { name: 'Confirm booking' })).not.toBeInTheDocument();
-    expect(postCount).toBe(1);
-    await user.click(screen.getByRole('button', { name: 'Check bookings' }));
-    await screen.findByRole('heading', { name: 'Bookings', level: 1 });
-    await waitFor(() => expect(bookingReads.length).toBeGreaterThan(0));
-    expect(screen.getByTestId('location')).toHaveTextContent('/bookings?date=2026-10-19');
-    expect(postCount).toBe(1);
+    renderPage(`${reviewPath}&outcome=unknown`);
+    await user.click(await screen.findByRole('button', { name: 'Retry saved booking' }));
+    await screen.findByRole('heading', { name: 'Booking confirmed' });
+    expect(keys).toHaveLength(2);
+    expect(keys[0]).toBe(keys[1]);
+    expect(loadAttempt(mockSession.user.id, booking)?.state).toBe('confirmed');
   });
 
-  it('keeps the uncertain-outcome guard when the review URL is reopened', async () => {
+  it('blocks a lost request whose persisted key is missing', async () => {
     renderPage(`${reviewPath}&outcome=unknown`);
-    await screen.findByRole('button', { name: 'Check bookings' });
-    expect(screen.getByRole('alert')).toHaveTextContent('Booking outcome not confirmed');
-    expect(screen.queryByRole('button', { name: 'Confirm booking' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent('saved request key is missing');
+    expect(screen.getByRole('button', { name: 'Confirm booking' })).toBeDisabled();
     expect(postCount).toBe(0);
   });
 
-  it('keeps pending and uncertain guards when navigating away and back', async () => {
+  it('keeps a pending submission guarded across navigation and displays its saved result on return', async () => {
     const user = userEvent.setup();
     let release = () => {};
     const pending = new Promise<void>((resolve) => {
@@ -243,30 +251,109 @@ describe('booking review', () => {
       http.post('*/api/v1/bookings', async () => {
         postCount += 1;
         await pending;
-        return HttpResponse.json(
-          { error: { code: 'UPSTREAM_TIMEOUT', message: 'Timeout.' } },
-          { status: 504 },
-        );
+        return HttpResponse.json({ ...booking, owner_id: mockSession.user.id }, { status: 201 });
       }),
     );
     renderPage();
     await user.click(await screen.findByRole('button', { name: 'Confirm booking' }));
     await waitFor(() => expect(postCount).toBe(1));
     await user.click(screen.getByRole('link', { name: 'Bookings navigation' }));
-    await screen.findByRole('heading', { name: 'Bookings', level: 1 });
     await user.click(screen.getByRole('link', { name: 'Review navigation' }));
     expect(await screen.findByRole('button', { name: 'Confirming booking' })).toBeDisabled();
-    await user.click(screen.getByRole('link', { name: 'Bookings navigation' }));
     await act(async () => release());
-    await waitFor(() =>
-      expect(screen.getByTestId('location')).toHaveTextContent('/bookings?date=2026-10-19'),
+    await screen.findByRole('heading', { name: 'Booking confirmed' });
+    expect(postCount).toBe(1);
+  });
+
+  it('preserves the exact review selection through sign-in and sends current CSRF', async () => {
+    const user = userEvent.setup();
+    let loggedIn = false;
+    server.use(
+      http.get('*/api/v1/auth/session', () =>
+        loggedIn ? HttpResponse.json(mockSession) : new HttpResponse(null, { status: 401 }),
+      ),
+      http.post('*/api/v1/auth/login', () => {
+        loggedIn = true;
+        return HttpResponse.json(mockSession);
+      }),
+      http.post('*/api/v1/bookings', ({ request }) => {
+        postCount += 1;
+        expect(request.headers.get('X-CSRF-Token')).toBe(mockSession.csrf_token);
+        return HttpResponse.json({ ...booking, owner_id: mockSession.user.id }, { status: 201 });
+      }),
     );
-    expect(screen.getByTestId('location')).not.toHaveTextContent('outcome=');
-    await user.click(screen.getByRole('link', { name: 'Review navigation' }));
-    expect(await screen.findByRole('button', { name: 'Check bookings' })).toBeInTheDocument();
-    await waitFor(() =>
-      expect(screen.getByTestId('location')).toHaveTextContent('outcome=unknown'),
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Sign in to book' }));
+    await user.type(await screen.findByLabelText('Email address'), 'synthetic@example.invalid');
+    await user.type(screen.getByLabelText('Password'), 'synthetic-only-password');
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+    await user.click(await screen.findByRole('button', { name: 'Confirm booking' }));
+    await screen.findByRole('heading', { name: 'Booking confirmed' });
+    expect(screen.getByTestId('location')).toHaveTextContent(reviewPath);
+    expect(postCount).toBe(1);
+  });
+
+  it('does not POST when the session changes before submission', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    const confirm = await screen.findByRole('button', { name: 'Confirm booking' });
+    server.use(
+      http.get('*/api/v1/auth/session', () =>
+        HttpResponse.json({
+          ...mockSession,
+          user: { ...mockSession.user, id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' },
+        }),
+      ),
     );
+    await user.click(confirm);
+    await waitFor(() =>
+      expect(clients.at(-1)?.getQueryData(['identity', 'session'])).toMatchObject({
+        user: { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' },
+      }),
+    );
+    expect(postCount).toBe(0);
+    expect(sessionStorage.getItem(attemptSlot(mockSession.user.id, booking))).toBeNull();
+  });
+
+  it('requires sign-in after an expired POST session and preserves the selection', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post('*/api/v1/bookings', () =>
+        HttpResponse.json(
+          { error: { code: 'UNAUTHENTICATED', message: 'Sign in.' } },
+          { status: 401 },
+        ),
+      ),
+    );
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Confirm booking' }));
+    await screen.findByRole('button', { name: 'Sign in to book' });
+    expect(screen.getByTestId('location')).toHaveTextContent(reviewPath);
+  });
+
+  it('never submits if the browser cannot persist the request key', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    const confirm = await screen.findByRole('button', { name: 'Confirm booking' });
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Storage blocked');
+    });
+    await user.click(confirm);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'cannot save a safe booking attempt',
+    );
+    expect(postCount).toBe(0);
+  });
+
+  it('retains the receipt on reload without submitting another reservation', async () => {
+    const user = userEvent.setup();
+    const view = renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Confirm booking' }));
+    await screen.findByRole('heading', { name: 'Booking confirmed' });
+    view.unmount();
+    renderPage();
+    await screen.findByRole('heading', { name: 'Booking confirmed' });
+    expect(screen.queryByRole('button', { name: 'Confirm booking' })).not.toBeInTheDocument();
     expect(postCount).toBe(1);
   });
 
@@ -278,6 +365,8 @@ describe('booking review', () => {
   });
 
   it.each([
+    { status: 403, title: 'Booking access denied', message: 'Account inactive.' },
+    { status: 429, title: 'Please wait before retrying', message: 'Slow down.' },
     { status: 404, title: 'Room not found', message: 'Unknown room.' },
     {
       status: 422,
@@ -324,6 +413,7 @@ describe('booking review', () => {
       ),
     );
     renderPage();
+    await waitFor(() => expect(clients.at(-1)?.getQueryData(['identity', 'session'])).toBeTruthy());
     expect(await screen.findByRole('alert')).toHaveTextContent('Room details unavailable');
     server.use(
       http.get('*/api/v1/rooms', () =>
