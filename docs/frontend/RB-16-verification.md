@@ -74,8 +74,10 @@ Screenshots identify the working-tree runtime; the final source is pinned above.
 
 ## Reproduce the isolated browser check
 
-Start the compose database, migrate a dedicated localhost database ending in
-`_test`, then from `backend` run:
+Start the compose database and migrate a dedicated localhost browser database
+ending in `_test`. Use a separate empty database for pytest, because its session
+fixture downgrades the schema and correctly refuses to discard existing booking
+ownership or retry history. Then from `backend` run:
 
 ```bash
 ROOMBOOK_TEST_DATABASE_URL='postgresql+psycopg://roombook:roombook@127.0.0.1:5433/roombook_test' \
@@ -88,7 +90,9 @@ and visit `http://127.0.0.1:5173`. Use the explicitly synthetic credentials
 future day within 14 days, and a free interval within its synthetic 09:00–17:00
 hours. Confirm, observe the injected 503, reload, and retry the saved booking.
 The helper binds only loopback, requires a local test database, and never resets
-or deletes data. Do not run database-resetting pytest fixtures concurrently.
+or deletes data. Do not point database-resetting pytest fixtures at this populated browser database.
+The final regression run used a fresh `roombook_rb16_test` after the expected
+reset refusal against the populated browser database; browser records were retained.
 Stop the helper and Vite after checking. The helper is under `tests` and is not
 loaded by the production application.
 
