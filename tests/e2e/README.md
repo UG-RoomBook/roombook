@@ -7,7 +7,7 @@ against MSW mocks.
 
 | Journey | Covers |
 |---|---|
-| `discovery.spec.ts` | Release identity in the footer, seeded rooms, interval search with availability, client-route fallback and JSON 404s |
+| `discovery.spec.ts` | Release identity in the footer, seeded rooms, dropdown duration boundaries (30 minutes–2 hours), interval search with availability, client-route fallback and JSON 404s |
 
 Booking, conflict and cancellation journeys join this folder when the booking
 API (RB-15 to RB-18) is merged.

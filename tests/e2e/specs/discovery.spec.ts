@@ -28,10 +28,30 @@ test('the app shows the deployed release and the seeded rooms', async ({ page })
 test('a visitor can search an interval and see availability', async ({ page }) => {
   await page.goto('/');
   const search = page.getByRole('form', { name: 'Room search' });
+  const end = search.getByRole('combobox', { name: 'Until' });
 
   await search.getByLabel('Date').fill(nextWeekday());
+  await expect(end).toBeDisabled();
   await search.getByLabel('From').fill('10:00');
-  await search.getByLabel('Until').fill('11:00');
+  await expect(end).toBeEnabled();
+  // Check native option state; Playwright's enabled matcher targets controls.
+  await expect(end.getByRole('option', { name: '10:29', exact: true })).toHaveJSProperty(
+    'disabled',
+    true,
+  );
+  await expect(end.getByRole('option', { name: '10:30', exact: true })).toHaveJSProperty(
+    'disabled',
+    false,
+  );
+  await expect(end.getByRole('option', { name: '12:00', exact: true })).toHaveJSProperty(
+    'disabled',
+    false,
+  );
+  await expect(end.getByRole('option', { name: '12:01', exact: true })).toHaveJSProperty(
+    'disabled',
+    true,
+  );
+  await end.selectOption('11:00');
   await search.getByLabel('People').selectOption({ label: 'Any size' });
   await search.getByRole('button', { name: 'Find rooms' }).click();
 
