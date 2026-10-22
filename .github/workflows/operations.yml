@@ -97,8 +97,10 @@ jobs:
           cp -r deploy/monitoring "$target/monitoring.new"
           rm -rf "$target/monitoring" && mv "$target/monitoring.new" "$target/monitoring"
           cp deploy/compose/monitoring.yml "$target/compose/monitoring.yml"
-          docker compose -p roombook-monitoring -f "$target/compose/monitoring.yml" up -d --wait --remove-orphans
-          curl -fsS -X POST http://127.0.0.1:9090/-/reload
+          # Recreate the containers: their bind mounts still point at the folder that
+          # was just replaced, so a reload alone would read a deleted directory.
+          # Metrics, alert state and dashboards live in named volumes and are kept.
+          docker compose -p roombook-monitoring -f "$target/compose/monitoring.yml" up -d --wait --remove-orphans --force-recreate
       - name: Check every scrape target is up
         if: steps.stack.outputs.skip != 'true'
         run: |
