@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { setupServer } from 'msw/node';
@@ -69,10 +69,13 @@ describe('room discovery', () => {
     expect(screen.getByLabelText('Until')).toBeDisabled();
     fireEvent.change(screen.getByLabelText('From'), { target: { value: '13:00' } });
     expect(screen.getByLabelText('Until')).toBeEnabled();
-    expect(screen.getByRole('option', { name: '13:29' })).toBeDisabled();
-    expect(screen.getByRole('option', { name: '13:30' })).toBeEnabled();
-    expect(screen.getByRole('option', { name: '15:00' })).toBeEnabled();
-    expect(screen.getByRole('option', { name: '15:01' })).toBeDisabled();
+    // Match option text inside the labelled picker instead of computing the
+    // accessible name of all 1,440 options for every boundary assertion.
+    const ends = within(screen.getByRole('combobox', { name: 'Until' }));
+    expect(ends.getByText('13:29', { selector: 'option', exact: true })).toBeDisabled();
+    expect(ends.getByText('13:30', { selector: 'option', exact: true })).toBeEnabled();
+    expect(ends.getByText('15:00', { selector: 'option', exact: true })).toBeEnabled();
+    expect(ends.getByText('15:01', { selector: 'option', exact: true })).toBeDisabled();
     expect(screen.getByLabelText('Until')).toHaveAccessibleDescription(
       /30 minutes–2 hours.*Latest end time: 15:00/,
     );
@@ -110,8 +113,9 @@ describe('room discovery', () => {
     expect(screen.getByLabelText('Until')).toHaveValue('02:30');
     fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-10-04' } });
     expect(screen.getByLabelText('Until')).toHaveValue('');
-    expect(screen.getByRole('option', { name: '02:30' })).toBeDisabled();
-    expect(screen.getByRole('option', { name: '03:00' })).toBeEnabled();
+    const ends = within(screen.getByRole('combobox', { name: 'Until' }));
+    expect(ends.getByText('02:30', { selector: 'option', exact: true })).toBeDisabled();
+    expect(ends.getByText('03:00', { selector: 'option', exact: true })).toBeEnabled();
     expect(screen.getByRole('status', { name: 'Booking duration' })).toHaveTextContent(
       'Latest end time: 04:30',
     );
@@ -286,6 +290,18 @@ describe('room discovery', () => {
   });
 
   it('restores applied filters from browser history and resets pagination on a new search', async () => {
+    const expectPage = async (page: number) => {
+      // Pagination disappears during a refetch. Avoid repeatedly dumping the
+      // entire minute picker while waiting for the new response on a slow runner.
+      await waitFor(
+        () => {
+          const pages = screen.queryByRole('navigation', { name: 'Room pages' });
+          expect(pages).toBeVisible();
+          expect(pages).toHaveTextContent(`Page ${page}`);
+        },
+        { timeout: 5000 },
+      );
+    };
     server.use(
       http.get('*/api/v1/rooms', ({ request }) => {
         const offset = Number(new URL(request.url).searchParams.get('offset'));
@@ -306,12 +322,12 @@ describe('room discovery', () => {
     await user.selectOptions(screen.getByLabelText('Until'), '16:00');
     await user.selectOptions(screen.getByLabelText('People'), '4');
     await user.click(screen.getByRole('button', { name: 'Find rooms' }));
-    await waitFor(() => expect(screen.getByText('Page 1')).toBeVisible());
+    await expectPage(1);
     expect(screen.getByTestId('location')).toHaveTextContent('offset=0');
     await user.click(screen.getByRole('button', { name: 'Next room page' }));
-    await waitFor(() => expect(screen.getByText('Page 2')).toBeVisible());
+    await expectPage(2);
     await user.click(screen.getByRole('button', { name: 'Back in history' }));
-    await waitFor(() => expect(screen.getByText('Page 1')).toBeVisible());
+    await expectPage(1);
     await user.click(screen.getByRole('button', { name: 'Back in history' }));
     await waitFor(() => expect(screen.getByLabelText('From')).toHaveValue('13:00'));
     expect(screen.getByLabelText('Until')).toHaveValue('14:00');
