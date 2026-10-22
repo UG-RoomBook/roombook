@@ -109,7 +109,8 @@ jobs:
           api=http://127.0.0.1:9090/api/v1/targets
           total=0; down=""
           for _ in $(seq 1 18); do
-            targets=$(curl -fsS "$api")
+            # Prometheus answers 503 until it has replayed its stored data; keep waiting.
+            targets=$(curl -fsS "$api" 2>/dev/null) || { targets='{"data":{"activeTargets":[]}}'; sleep 10; continue; }
             total=$(jq '.data.activeTargets | length' <<<"$targets")
             down=$(jq -r '.data.activeTargets[] | select(.health != "up") | "\(.labels.job) \(.labels.host // "") \(.health) \(.lastError)"' <<<"$targets")
             [[ "$total" -gt 0 && -z "$down" ]] && break
