@@ -111,7 +111,11 @@ Run the candidate pipeline again; Caddy obtains certificates for the new names.
 
 ## Application secrets and accounts
 
-Secrets live in SSM Parameter Store, never in Git:
+Secrets live in SSM Parameter Store, never in Git. To turn on accounts in one
+step, run `.\infra\scripts\enable-auth.ps1 -Environment production` (or `staging`):
+it asks for the Supabase project URL and publishable key, generates the token
+encryption key, sets the site URL to the environment's sslip.io origin and applies
+the settings to the host; then redeploy. Individual settings:
 
 ```powershell
 .\infra\scripts\set-app-setting.ps1 -Environment staging -Name ROOMBOOK_AUTH_SUPABASE_URL -Value https://<ref>.supabase.co
