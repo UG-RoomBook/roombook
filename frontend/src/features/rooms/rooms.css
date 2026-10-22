@@ -1,27 +1,146 @@
-#rb-swinburne .sw-time-hint {
-  grid-column: 1 / -1;
-  margin: 0;
+#rb-swinburne .sw-room-filter {
+  display: flex;
+  align-items: end;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
 }
-
-#rb-swinburne .sw-search select[name='end'] {
+#rb-swinburne .sw-room-filter label,
+#rb-swinburne .sw-schedule-date {
+  display: grid;
+  gap: 8px;
+  max-width: 280px;
+  font-weight: 600;
+}
+#rb-swinburne .sw-room-filter select,
+#rb-swinburne .sw-schedule-date input {
   min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
 }
-
-#rb-swinburne .sw-search select:disabled,
-#rb-swinburne .sw-search option:disabled {
+#rb-swinburne .sw-schedule-room {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin: 24px 0;
+}
+#rb-swinburne .sw-schedule-room > :first-child {
+  max-width: 220px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+#rb-swinburne .sw-slot-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+#rb-swinburne .sw-time-choices {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+#rb-swinburne .sw-time-choices legend {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+#rb-swinburne .sw-time-choices details {
+  border-top: 1px solid var(--line);
+}
+#rb-swinburne .sw-time-choices summary {
+  min-height: 44px;
+  padding: 14px 0;
+  cursor: pointer;
+}
+#rb-swinburne .sw-time-choices summary span {
+  display: block;
+  margin: 6px 0 0 18px;
+}
+#rb-swinburne .sw-time-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding-bottom: 16px;
+}
+#rb-swinburne .sw-time-choice {
+  position: relative;
+  min-width: 0;
+  font-size: 15px;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ink);
+}
+#rb-swinburne .sw-time-choice input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  z-index: 1;
+  cursor: pointer;
+}
+#rb-swinburne .sw-time-choice > span {
+  display: flex;
+  min-height: 62px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+}
+#rb-swinburne .sw-time-choice small {
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.4;
+}
+#rb-swinburne .sw-time-choice input:disabled + span {
   color: var(--sub);
   background: var(--soft);
   cursor: not-allowed;
+  border-style: dashed;
 }
-
-#rb-swinburne .sw-search select:disabled {
-  opacity: 0.6;
-  border-color: var(--line);
+#rb-swinburne .sw-time-choice.in-range > span {
+  box-shadow: inset 0 -3px var(--red);
 }
-
-@media (min-width: 1200px) {
-  #rb-swinburne form.sw-search .sw-btn {
-    grid-column: 5;
-    grid-row: 1;
+#rb-swinburne .sw-time-choice input:checked + span {
+  border: 2px solid var(--red);
+  font-weight: 700;
+}
+#rb-swinburne .sw-time-choice input:focus-visible + span {
+  outline: 3px solid var(--red);
+  outline-offset: 3px;
+}
+#rb-swinburne .sw-slot-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  margin-top: 24px;
+  padding: 20px 0;
+}
+@media (max-width: 700px) {
+  #rb-swinburne .sw-slot-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #rb-swinburne .sw-schedule-room {
+    align-items: start;
+  }
+  #rb-swinburne .sw-schedule-room > :first-child {
+    display: none;
+  }
+  #rb-swinburne .sw-time-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }

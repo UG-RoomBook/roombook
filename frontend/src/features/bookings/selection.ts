@@ -38,12 +38,23 @@ export function readBookingSelection(
 
 export function searchPath(params: URLSearchParams): string {
   const filters = new URLSearchParams();
-  for (const key of ['date', 'start', 'end', 'capacity', 'offset']) {
+  for (const key of ['capacity', 'offset']) {
     const value = params.get(key);
     if (value !== null) filters.set(key, value);
   }
   const query = filters.toString();
   return query ? `/?${query}` : '/';
+}
+
+export function roomTimePath(params: URLSearchParams): string {
+  const roomId = params.get('room_id');
+  if (!roomId) return searchPath(params);
+  const values = new URLSearchParams();
+  for (const key of ['date', 'start', 'end', 'capacity', 'offset']) {
+    const value = params.get(key);
+    if (value !== null) values.set(key, value);
+  }
+  return `/rooms/${encodeURIComponent(roomId)}?${values}`;
 }
 
 export const bookingDateSchema = z.object({
@@ -62,4 +73,9 @@ export type BookingDateValues = z.infer<typeof bookingDateSchema>;
 export function readOffset(params: URLSearchParams): number {
   const offset = Number(params.get('offset') ?? '0');
   return Number.isSafeInteger(offset) && offset >= 0 ? offset : 0;
+}
+
+export function readCapacity(params: URLSearchParams) {
+  const value = Number(params.get('capacity') ?? 1);
+  return Number.isSafeInteger(value) && value > 0 ? value : 1;
 }

@@ -1,6 +1,7 @@
 import { CalendarDays, LayoutGrid } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { RoomBookingPage } from '@/features/rooms/RoomBookingPage';
 import { FindRoomPage } from '@/features/rooms/FindRoomPage';
 import { ReviewBookingPage } from '@/features/bookings/ReviewBookingPage';
 import { BookingsPage } from '@/features/bookings/BookingsPage';
@@ -28,9 +29,13 @@ export function App() {
   const location = useLocation();
   const mainRef = useRef<HTMLElement>(null);
   const previousPath = useRef(location.pathname);
-  const findActive = location.pathname === '/' || location.pathname === '/review';
+  const findActive =
+    location.pathname === '/' ||
+    location.pathname === '/review' ||
+    location.pathname.startsWith('/rooms/');
   const filters = new URLSearchParams(findActive ? location.search : '');
-  filters.delete('room_id');
+  for (const key of [...filters.keys()])
+    if (!['capacity', 'offset'].includes(key)) filters.delete(key);
   const currentSearch = filters.size ? `?${filters.toString()}` : '';
   const [lastSearch, setLastSearch] = useState(currentSearch);
   if (findActive && lastSearch !== currentSearch) setLastSearch(currentSearch);
@@ -41,7 +46,7 @@ export function App() {
       mainRef.current?.querySelector('h1')?.focus({ preventScroll: true });
       previousPath.current = location.pathname;
     }
-    document.title = `${location.pathname.startsWith('/account') ? 'Account' : location.pathname.startsWith('/bookings') ? 'Bookings' : location.pathname.startsWith('/review') ? 'Review booking' : 'Find a room'} | RoomBook`;
+    document.title = `${location.pathname.startsWith('/account') ? 'Account' : location.pathname.startsWith('/bookings') ? 'Bookings' : location.pathname.startsWith('/review') ? 'Review booking' : location.pathname.startsWith('/rooms/') ? 'Choose time' : 'Find a room'} | RoomBook`;
   }, [location.pathname, location.search]);
 
   return (
@@ -85,6 +90,7 @@ export function App() {
             <div className="sw-stage">
               <Routes>
                 <Route path="/" element={<FindRoomPage />} />
+                <Route path="/rooms/:roomId" element={<RoomBookingPage />} />
                 <Route path="/review" element={<ReviewBookingPage />} />
                 <Route path="/bookings" element={<BookingsPage />} />
                 <Route path="/account/*" element={<AccountPage />} />

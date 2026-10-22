@@ -10,7 +10,7 @@ import { campusToday, formatCampusDate, toBookingInterval } from '@/shared/dates
 import { RoomIllustration } from '@/shared/illustrations/RoomIllustration';
 import { Button, PageTitle, StateMessage } from '@/shared/ui';
 import { bookingFeedback, type BookingFeedback } from './booking-error';
-import { readBookingSelection, searchPath } from './selection';
+import { readBookingSelection, roomTimePath, searchPath } from './selection';
 import { loadAttempt, useCreateBooking } from './submission';
 import './bookings.css';
 
@@ -105,7 +105,8 @@ function ReviewContent({
       confirmed ||
       storageError ||
       lostAttempt ||
-      ((!room || unavailable || exceedsCapacity) && !uncertain) ||
+      ((!room || roomQuery.isFetching || roomQuery.isError || unavailable || exceedsCapacity) &&
+        !uncertain) ||
       lock.current ||
       creating ||
       !retryReady
@@ -209,7 +210,8 @@ function ReviewContent({
         Boolean(storageError) ||
         lostAttempt ||
         Boolean(sessionError) ||
-        (!uncertain && (unavailable || exceedsCapacity))
+        (!uncertain &&
+          (roomQuery.isFetching || roomQuery.isError || unavailable || exceedsCapacity))
       }
       aria-busy={creating}
     >
@@ -288,8 +290,11 @@ function ReviewContent({
                 </div>
               </dl>
               <div className="sw-actions">
-                <Button disabled={creating} onClick={back}>
-                  Back
+                <Button
+                  disabled={creating || uncertain || lostAttempt}
+                  onClick={() => navigate(roomTimePath(params))}
+                >
+                  Change time
                 </Button>
                 {submit}
               </div>

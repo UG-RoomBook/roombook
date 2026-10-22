@@ -344,3 +344,183 @@ def test_database_connection_failure_is_sanitized() -> None:
     assert response.json()["error"]["request_id"] == response.headers["x-request-id"]
     assert "secret" not in response.text
     assert "SELECT" not in response.text
+
+
+def test_direct_room_metadata_and_paired_interval(
+    room_client: TestClient, db_session: Session
+) -> None:
+    room = add_room(db_session, "Studio")
+    path = f"/api/v1/rooms/{room.id}"
+    metadata = room_client.get(path)
+    assert metadata.status_code == 200
+    assert metadata.json()["id"] == str(room.id)
+    assert "available" not in metadata.json()
+    interval = {"starts_at": "2026-10-19T10:00+11:00", "ends_at": "2026-10-19T10:31+11:00"}
+    assert room_client.get(path, params=interval).json()["available"] is True
+    assert room_client.get(path, params={"starts_at": interval["starts_at"]}).status_code == 422
+    assert room_client.get(f"/api/v1/rooms/{uuid4()}").status_code == 404
+    assert (
+        room_client.get(f"/api/v1/rooms/{uuid4()}/availability?date=2026-10-19").status_code == 404
+    )
+
+
+def test_day_choices_respect_gaps_adjacency_cancellation_and_privacy(
+    room_client: TestClient,
+    db_session: Session,
+) -> None:
+    room = add_room(db_session, "Studio")
+    booking = add_booking(
+        db_session, room, start="2026-10-19T10:45+11:00", end="2026-10-19T11:15+11:00"
+    )
+    path = f"/api/v1/rooms/{room.id}/availability?date=2026-10-19"
+    response = room_client.get(path)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["date"] == "2026-10-19"
+    assert body["timezone"] == "Australia/Melbourne"
+    assert body["generated_at"] == "2026-10-18T00:00:00Z"
+    assert body["booking_window_ends_at"] == "2026-11-01T00:00:00Z"
+    slots = {slot["time"]: slot for slot in body["slots"]}
+    assert len(slots) == 96
+    assert [end["time"] for end in slots["10:00"]["valid_ends"]] == ["10:30", "10:45"]
+    assert slots["10:30"]["available"] is False
+    assert slots["11:15"]["available"] is True
+    assert [end["time"] for end in slots["11:15"]["valid_ends"]] == [
+        "11:45",
+        "12:00",
+        "12:15",
+        "12:30",
+        "12:45",
+        "13:00",
+        "13:15",
+    ]
+    assert slots["23:15"]["valid_ends"][-1]["time"] == "23:45"
+    assert slots["23:30"]["available"] is False
+    assert str(booking.id) not in response.text
+    assert "owner" not in response.text
+    booking.status = "cancelled"
+    booking.cancelled_at = datetime(2026, 10, 18, 1, tzinfo=UTC)
+    db_session.flush()
+    restored = {s["time"]: s for s in room_client.get(path).json()["slots"]}
+    assert restored["10:00"]["valid_ends"][-1]["time"] == "12:00"
+
+
+@pytest.mark.parametrize("state", ["inactive", "schedule_unconfirmed", "closed"])
+def test_day_fails_closed(room_client: TestClient, db_session: Session, state: str) -> None:
+    from datetime import date
+
+    from app.modules.availability.models import DateException
+
+    room = add_room(db_session, "Studio", active=state != "inactive")
+    if state == "schedule_unconfirmed":
+        room.hours_confirmed = False
+    elif state == "closed":
+        db_session.add(DateException(room_id=room.id, date=date(2026, 10, 19)))
+    db_session.flush()
+    response = room_client.get(f"/api/v1/rooms/{room.id}/availability?date=2026-10-19")
+    assert response.status_code == 200
+    assert all(not s["available"] and not s["valid_ends"] for s in response.json()["slots"])
+    assert {s["unavailable_reason"] for s in response.json()["slots"]} == {
+        "unavailable" if state == "closed" else state
+    }
+
+
+def test_day_exceptions_and_closures(room_client: TestClient, db_session: Session) -> None:
+    from datetime import date
+
+    from app.modules.availability.models import Closure, DateException, ExceptionHours
+
+    room = add_room(db_session, "Studio")
+    exception = DateException(room_id=room.id, date=date(2026, 10, 19))
+    db_session.add(exception)
+    db_session.flush()
+    db_session.add(ExceptionHours(exception_id=exception.id, start_minute=600, end_minute=720))
+    db_session.add(
+        Closure(
+            room_id=room.id,
+            starts_at=datetime.fromisoformat("2026-10-19T11:00+11:00"),
+            ends_at=datetime.fromisoformat("2026-10-19T11:30+11:00"),
+            reason="Private maintenance details",
+        )
+    )
+    db_session.flush()
+    response = room_client.get(f"/api/v1/rooms/{room.id}/availability?date=2026-10-19")
+    slots = {s["time"]: s for s in response.json()["slots"]}
+    assert slots["09:45"]["available"] is False
+    assert [e["time"] for e in slots["10:00"]["valid_ends"]] == ["10:30", "10:45", "11:00"]
+    assert slots["11:30"]["valid_ends"][0]["time"] == "12:00"
+    assert slots["11:45"]["available"] is False
+    assert "Private maintenance" not in response.text
+
+
+def test_day_clock_and_horizon(room_client: TestClient, db_session: Session) -> None:
+    room = add_room(db_session, "Studio")
+    path = f"/api/v1/rooms/{room.id}/availability"
+    today = {
+        s["time"]: s for s in room_client.get(path, params={"date": "2026-10-18"}).json()["slots"]
+    }
+    assert today["11:00"]["unavailable_reason"] == "past"
+    assert today["11:15"]["available"] is True
+    last = {
+        s["time"]: s for s in room_client.get(path, params={"date": "2026-11-01"}).json()["slots"]
+    }
+    assert last["11:00"]["available"] is True
+    assert last["11:15"]["unavailable_reason"] == "outside_horizon"
+    for invalid in ["2026-10-17", "2026-11-02", "9999-12-31", "invalid", "2026-10-19T00:00:00Z"]:
+        assert room_client.get(path, params={"date": invalid}).status_code == 422
+
+
+@pytest.mark.parametrize(
+    ("day", "clock", "last_end"),
+    [("2026-10-04", "2026-10-03T00:00Z", "04:30"), ("2026-04-05", "2026-04-04T00:00Z", None)],
+)
+def test_day_dst_endpoints_and_elapsed_duration(
+    room_client: TestClient, db_session: Session, day: str, clock: str, last_end: str | None
+) -> None:
+    assert isinstance(room_client.app, FastAPI)
+    room_client.app.dependency_overrides[current_time] = lambda: datetime.fromisoformat(clock)
+    room = add_room(db_session, "Studio")
+    response = room_client.get(f"/api/v1/rooms/{room.id}/availability", params={"date": day})
+    assert response.status_code == 200
+    slots = {s["time"]: s for s in response.json()["slots"]}
+    for time in ["02:00", "02:15", "02:30", "02:45"]:
+        assert slots[time]["unavailable_reason"] == "invalid_local_time"
+        assert slots[time]["starts_at"] is None
+    ends = slots["01:30"]["valid_ends"]
+    if last_end:
+        assert ends[0]["time"] == "03:00"
+        assert ends[-1]["time"] == last_end
+    else:
+        assert ends == []  # Earliest unambiguous end is 03:00, 150 elapsed minutes later.
+    for slot in slots.values():
+        for end in slot["valid_ends"]:
+            minutes = (
+                datetime.fromisoformat(end["ends_at"]) - datetime.fromisoformat(slot["starts_at"])
+            ).total_seconds() / 60
+            assert 30 <= minutes <= 120
+
+
+def test_day_uses_five_queries(
+    room_client: TestClient, db_session: Session, db_engine: Engine
+) -> None:
+    room = add_room(db_session, "Studio")
+    statements: list[str] = []
+
+    def record(
+        _connection: object,
+        _cursor: object,
+        statement: str,
+        _parameters: object,
+        _context: object,
+        _many: bool,
+    ) -> None:
+        if statement.lstrip().upper().startswith("SELECT"):
+            statements.append(statement)
+
+    event.listen(db_engine, "before_cursor_execute", record)
+    try:
+        response = room_client.get(f"/api/v1/rooms/{room.id}/availability?date=2026-10-19")
+    finally:
+        event.remove(db_engine, "before_cursor_execute", record)
+    assert response.status_code == 200
+    assert len(statements) == 5

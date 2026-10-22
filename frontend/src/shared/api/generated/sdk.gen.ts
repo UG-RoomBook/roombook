@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, type Options as Options2, type RequestResult, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { ChangeAccountEmailData, ChangeAccountEmailErrors, ChangeAccountEmailResponses, ConfirmAccountEmailData, ConfirmAccountEmailErrors, CreateBookingData, CreateBookingErrors, CreateBookingResponses, GetCurrentSessionData, GetCurrentSessionErrors, GetCurrentSessionResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetRecoverySessionData, GetRecoverySessionErrors, GetRecoverySessionResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ListRoomsData, ListRoomsErrors, ListRoomsResponses, LoginAccountData, LoginAccountErrors, LoginAccountResponses, LogoutCurrentSessionData, LogoutCurrentSessionErrors, LogoutCurrentSessionResponses, RegisterAccountData, RegisterAccountErrors, RegisterAccountResponses, RequestAccountRecoveryData, RequestAccountRecoveryErrors, RequestAccountRecoveryResponses, ResendAccountVerificationData, ResendAccountVerificationErrors, ResendAccountVerificationResponses, ResetAccountPasswordData, ResetAccountPasswordErrors, ResetAccountPasswordResponses, ShowAccountConfirmationData, ShowAccountConfirmationErrors, ShowAccountConfirmationResponses } from './types.gen';
+import type { ChangeAccountEmailData, ChangeAccountEmailErrors, ChangeAccountEmailResponses, ConfirmAccountEmailData, ConfirmAccountEmailErrors, CreateBookingData, CreateBookingErrors, CreateBookingResponses, GetCurrentSessionData, GetCurrentSessionErrors, GetCurrentSessionResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetRecoverySessionData, GetRecoverySessionErrors, GetRecoverySessionResponses, GetRoomData, GetRoomDayAvailabilityData, GetRoomDayAvailabilityErrors, GetRoomDayAvailabilityResponses, GetRoomErrors, GetRoomResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ListRoomsData, ListRoomsErrors, ListRoomsResponses, LoginAccountData, LoginAccountErrors, LoginAccountResponses, LogoutCurrentSessionData, LogoutCurrentSessionErrors, LogoutCurrentSessionResponses, RegisterAccountData, RegisterAccountErrors, RegisterAccountResponses, RequestAccountRecoveryData, RequestAccountRecoveryErrors, RequestAccountRecoveryResponses, ResendAccountVerificationData, ResendAccountVerificationErrors, ResendAccountVerificationResponses, ResetAccountPasswordData, ResetAccountPasswordErrors, ResetAccountPasswordResponses, ShowAccountConfirmationData, ShowAccountConfirmationErrors, ShowAccountConfirmationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -162,6 +162,16 @@ export const createBooking = <ThrowOnError extends boolean = false>(options: Opt
  * Get Rooms
  */
 export const listRooms = <ThrowOnError extends boolean = false>(options?: Options<ListRoomsData, ThrowOnError>): RequestResult<ListRoomsResponses, ListRoomsErrors, ThrowOnError> => (options?.client ?? client).get<ListRoomsResponses, ListRoomsErrors, ThrowOnError>({ url: '/api/v1/rooms', ...options });
+
+/**
+ * Get Room
+ */
+export const getRoom = <ThrowOnError extends boolean = false>(options: Options<GetRoomData, ThrowOnError>): RequestResult<GetRoomResponses, GetRoomErrors, ThrowOnError> => (options.client ?? client).get<GetRoomResponses, GetRoomErrors, ThrowOnError>({ url: '/api/v1/rooms/{room_id}', ...options });
+
+/**
+ * Get Room Day Availability
+ */
+export const getRoomDayAvailability = <ThrowOnError extends boolean = false>(options: Options<GetRoomDayAvailabilityData, ThrowOnError>): RequestResult<GetRoomDayAvailabilityResponses, GetRoomDayAvailabilityErrors, ThrowOnError> => (options.client ?? client).get<GetRoomDayAvailabilityResponses, GetRoomDayAvailabilityErrors, ThrowOnError>({ url: '/api/v1/rooms/{room_id}/availability', ...options });
 
 /**
  * Health

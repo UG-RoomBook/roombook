@@ -91,9 +91,7 @@ describe('application shell', () => {
     await user.click(screen.getByRole('link', { name: 'Bookings' }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Bookings' })).toHaveFocus());
     await user.click(screen.getByRole('link', { name: 'Find a room' }));
-    expect(screen.getByLabelText('Current location')).toHaveTextContent(
-      '/?date=2026-10-19&start=13%3A00&end=14%3A00&capacity=4',
-    );
+    expect(screen.getByLabelText('Current location')).toHaveTextContent('/?capacity=4');
     expect(screen.getByLabelText('Current location')).not.toHaveTextContent('room_id');
   });
 

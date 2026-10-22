@@ -10,6 +10,7 @@ export const mockSession = {
 };
 
 import { mockBookings, mockRooms } from './data';
+import { demoRoomDay } from './room-day';
 
 function error(status: number, code: string, message: string) {
   return HttpResponse.json({ error: { code, message, request_id: 'mock-request' } }, { status });
@@ -45,6 +46,35 @@ function overlap(booking: Booking, start: string, end: string) {
 }
 
 export const handlers = [
+  http.get('*/api/v1/rooms/:id/availability', ({ params, request }) => {
+    const room = mockRooms.find((item) => item.id === params.id);
+    if (!room) return error(404, 'ROOM_NOT_FOUND', 'Room not found.');
+    return HttpResponse.json(
+      demoRoomDay(room, new URL(request.url).searchParams.get('date') ?? ''),
+    );
+  }),
+  http.get('*/api/v1/rooms/:id', ({ params, request }) => {
+    const room = mockRooms.find((item) => item.id === params.id);
+    if (!room) return error(404, 'ROOM_NOT_FOUND', 'Room not found.');
+    const url = new URL(request.url);
+    const start = url.searchParams.get('starts_at');
+    const end = url.searchParams.get('ends_at');
+    return HttpResponse.json({
+      ...room,
+      ...(start && end
+        ? {
+            available:
+              room.active &&
+              !mockBookings.some(
+                (booking) =>
+                  booking.room_id === room.id &&
+                  booking.status === 'active' &&
+                  overlap(booking, start, end),
+              ),
+          }
+        : {}),
+    });
+  }),
   http.get('*/api/v1/auth/session', () => HttpResponse.json(mockSession)),
   http.get('*/version', () =>
     HttpResponse.json({ commit_sha: 'mock-data', environment: 'development', version: '0.1.0' }),

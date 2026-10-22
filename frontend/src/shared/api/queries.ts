@@ -68,19 +68,23 @@ export function useRoomCatalog() {
 export function useRoom(roomId: string, filters: SearchFilters, enabled = true) {
   return useQuery({
     queryKey: [...queryKeys.rooms, 'detail', roomId, filters],
-    queryFn: async ({ signal }) => {
-      const rooms = await fetchRoomCatalog(signal, toCampusInterval(filters));
-      const room = rooms.find((item) => item.id === roomId);
-      if (!room)
-        throw new ApiError('This room could not be found. Return to search.', {
-          status: 404,
-          code: 'ROOM_NOT_FOUND',
-        });
-      return room;
-    },
+    queryFn: ({ signal }) => api.room(roomId, toCampusInterval(filters), signal),
     enabled,
     retry: retryRead,
     staleTime: 0,
+  });
+}
+
+export function useRoomDay(roomId: string, date: string, enabled = true) {
+  return useQuery({
+    queryKey: [...queryKeys.rooms, 'availability', roomId, date],
+    queryFn: ({ signal }) => api.roomDay(roomId, date, signal),
+    enabled,
+    staleTime: 0,
+    refetchOnWindowFocus: 'always',
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
+    retry: retryRead,
   });
 }
 
