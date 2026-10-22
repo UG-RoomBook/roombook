@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { bookingDateSchema, readBookingSelection, readOffset, searchPath } from './selection';
+import {
+  bookingDateSchema,
+  readBookingSelection,
+  readOffset,
+  roomTimePath,
+  searchPath,
+} from './selection';
 
 describe('booking route selection', () => {
   it.each([
@@ -48,10 +54,11 @@ describe('booking route selection', () => {
     const params = new URLSearchParams(
       'room_id=studio&date=2026-10-19&start=13:00&end=14:00&capacity=4&offset=20&outcome=unknown',
     );
-    expect(searchPath(params)).toBe(
-      '/?date=2026-10-19&start=13%3A00&end=14%3A00&capacity=4&offset=20',
-    );
+    expect(searchPath(params)).toBe('/?capacity=4&offset=20');
     expect(searchPath(new URLSearchParams())).toBe('/');
+    expect(roomTimePath(params)).toBe(
+      '/rooms/studio?date=2026-10-19&start=13%3A00&end=14%3A00&capacity=4&offset=20',
+    );
     expect(readBookingSelection(params).selection?.capacity).toBe(4);
   });
 

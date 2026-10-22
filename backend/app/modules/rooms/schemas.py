@@ -1,7 +1,7 @@
 """Room discovery inputs and public response shapes."""
 
-from datetime import UTC, datetime
-from typing import Self
+from datetime import UTC, date, datetime
+from typing import Literal, Self
 from uuid import UUID
 
 from pydantic import (
@@ -14,11 +14,9 @@ from pydantic import (
 )
 
 
-class RoomQuery(BaseModel):
+class RoomIntervalQuery(BaseModel):
     starts_at: AwareDatetime | None = None
     ends_at: AwareDatetime | None = None
-    limit: int = Field(default=20, ge=1, le=100)
-    offset: int = Field(default=0, ge=0, le=9_223_372_036_854_775_807)
 
     @field_validator("starts_at", "ends_at", mode="before")
     @classmethod
@@ -47,6 +45,25 @@ class RoomQuery(BaseModel):
         return self
 
 
+class RoomQuery(RoomIntervalQuery):
+    limit: int = Field(default=20, ge=1, le=100)
+    offset: int = Field(default=0, ge=0, le=9_223_372_036_854_775_807)
+
+
+class RoomDayQuery(BaseModel):
+    day: date = Field(alias="date")
+
+    @field_validator("day", mode="before")
+    @classmethod
+    def parse_day(cls, value: object) -> date:
+        if not isinstance(value, str) or len(value) != 10:
+            raise ValueError("Use a date in YYYY-MM-DD format.")
+        parsed = date.fromisoformat(value)
+        if parsed.isoformat() != value:
+            raise ValueError("Use a date in YYYY-MM-DD format.")
+        return parsed
+
+
 class RoomRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -67,3 +84,35 @@ class RoomList(BaseModel):
     total: int = Field(ge=0)
     limit: int = Field(ge=1, le=100)
     offset: int = Field(ge=0)
+
+
+class RoomEndChoice(BaseModel):
+    time: str
+    ends_at: AwareDatetime
+
+
+class RoomStartChoice(BaseModel):
+    time: str
+    starts_at: AwareDatetime | None
+    available: bool
+    unavailable_reason: (
+        Literal[
+            "inactive",
+            "schedule_unconfirmed",
+            "past",
+            "outside_horizon",
+            "invalid_local_time",
+            "unavailable",
+        ]
+        | None
+    )
+    valid_ends: list[RoomEndChoice]
+
+
+class RoomDayAvailability(BaseModel):
+    room: RoomRead
+    date: date
+    timezone: Literal["Australia/Melbourne"] = "Australia/Melbourne"
+    generated_at: AwareDatetime
+    booking_window_ends_at: AwareDatetime
+    slots: list[RoomStartChoice]

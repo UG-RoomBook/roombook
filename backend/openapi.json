@@ -342,6 +342,69 @@
         "title": "RoomAvailability",
         "type": "object"
       },
+      "RoomDayAvailability": {
+        "properties": {
+          "booking_window_ends_at": {
+            "format": "date-time",
+            "title": "Booking Window Ends At",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "room": {
+            "$ref": "#/components/schemas/RoomRead"
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/RoomStartChoice"
+            },
+            "title": "Slots",
+            "type": "array"
+          },
+          "timezone": {
+            "const": "Australia/Melbourne",
+            "default": "Australia/Melbourne",
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "room",
+          "date",
+          "generated_at",
+          "booking_window_ends_at",
+          "slots"
+        ],
+        "title": "RoomDayAvailability",
+        "type": "object"
+      },
+      "RoomEndChoice": {
+        "properties": {
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "time": {
+            "title": "Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "time",
+          "ends_at"
+        ],
+        "title": "RoomEndChoice",
+        "type": "object"
+      },
       "RoomList": {
         "properties": {
           "items": {
@@ -417,6 +480,65 @@
           "active"
         ],
         "title": "RoomRead",
+        "type": "object"
+      },
+      "RoomStartChoice": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "starts_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Starts At"
+          },
+          "time": {
+            "title": "Time",
+            "type": "string"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "inactive",
+                  "schedule_unconfirmed",
+                  "past",
+                  "outside_horizon",
+                  "invalid_local_time",
+                  "unavailable"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          },
+          "valid_ends": {
+            "items": {
+              "$ref": "#/components/schemas/RoomEndChoice"
+            },
+            "title": "Valid Ends",
+            "type": "array"
+          }
+        },
+        "required": [
+          "time",
+          "starts_at",
+          "available",
+          "unavailable_reason",
+          "valid_ends"
+        ],
+        "title": "RoomStartChoice",
         "type": "object"
       },
       "RuntimeVersion": {
@@ -1912,6 +2034,204 @@
           }
         },
         "summary": "Get Rooms",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/api/v1/rooms/{room_id}": {
+      "get": {
+        "operationId": "getRoom",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "starts_at",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Starts At"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ends_at",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ends At"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RoomAvailability"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RoomRead"
+                    }
+                  ],
+                  "title": "Response Getroom"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Get Room",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/api/v1/rooms/{room_id}/availability": {
+      "get": {
+        "operationId": "getRoomDayAvailability",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomDayAvailability"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Get Room Day Availability",
         "tags": [
           "rooms"
         ]

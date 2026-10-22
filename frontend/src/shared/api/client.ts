@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import { client } from './generated/client.gen';
-import { createBooking, getVersion, listRooms } from './generated/sdk.gen';
+import {
+  createBooking,
+  getVersion,
+  listRooms,
+  getRoom,
+  getRoomDayAvailability,
+} from './generated/sdk.gen';
 import { bookingListSchema, bookingSchema, provisionalBookings } from './provisional-bookings';
 import type { CreateBooking, Pagination } from './types';
 import { createClient } from './generated/client';
@@ -32,6 +38,37 @@ const roomSchema = z.object({
   active: z.boolean(),
   available: z.boolean().optional(),
 });
+const timestampSchema = z.string().datetime({ offset: true });
+const timeSchema = z.string().regex(/^(?:[01]\d|2[0-3]):(?:00|15|30|45)$/);
+const roomDaySchema = z.object({
+  room: roomSchema,
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  timezone: z.literal('Australia/Melbourne'),
+  generated_at: timestampSchema,
+  booking_window_ends_at: timestampSchema,
+  slots: z.array(
+    z
+      .object({
+        time: timeSchema,
+        starts_at: timestampSchema.nullable(),
+        available: z.boolean(),
+        unavailable_reason: z
+          .enum([
+            'inactive',
+            'schedule_unconfirmed',
+            'past',
+            'outside_horizon',
+            'invalid_local_time',
+            'unavailable',
+          ])
+          .nullable(),
+        valid_ends: z.array(z.object({ time: timeSchema, ends_at: timestampSchema })),
+      })
+      .refine((slot) => slot.available === (slot.starts_at !== null && slot.valid_ends.length > 0)),
+  ),
+});
+export type RoomDay = z.infer<typeof roomDaySchema>;
+
 const paginationSchema = {
   total: z.number().int().nonnegative(),
   limit: z.number().int().positive().max(100),
@@ -139,6 +176,33 @@ async function readResult<T>(
 }
 
 export const api = {
+  room: (
+    roomId: string,
+    query: { starts_at?: string; ends_at?: string } = {},
+    signal?: AbortSignal,
+  ) =>
+    readResult(
+      (requestSignal) =>
+        getRoom({ path: { room_id: roomId }, query, signal: requestSignal, cache: 'no-store' }),
+      roomSchema.refine(
+        (room) => room.id === roomId && (!query.starts_at || typeof room.available === 'boolean'),
+      ),
+      false,
+      signal,
+    ),
+  roomDay: (roomId: string, date: string, signal?: AbortSignal) =>
+    readResult(
+      (requestSignal) =>
+        getRoomDayAvailability({
+          path: { room_id: roomId },
+          query: { date },
+          signal: requestSignal,
+          cache: 'no-store',
+        }),
+      roomDaySchema.refine((day) => day.room.id === roomId && day.date === date),
+      false,
+      signal,
+    ),
   rooms: (
     query: Pagination & { starts_at?: string; ends_at?: string } = {},
     signal?: AbortSignal,

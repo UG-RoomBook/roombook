@@ -1,34 +1,16 @@
 import { ArrowUpRight, DoorOpen, Users } from 'lucide-react';
-import type { Room, SearchFilters } from '@/shared/api/types';
+import type { Room } from '@/shared/api/types';
 import { RoomIllustration, roomVisualDetails } from '@/shared/illustrations';
 import { Button } from '@/shared/ui';
 
-type RoomCardProps = {
-  room: Room;
-  filters: SearchFilters;
-  hasInterval: boolean;
-  onBook: (room: Room) => void;
-};
-
-export function RoomCard({ room, filters, hasInterval, onBook }: RoomCardProps) {
-  const canBook = hasInterval && room.active && room.available === true;
-  const status = !room.active
-    ? 'Inactive'
-    : !hasInterval
-      ? 'Choose a time'
-      : room.available === true
-        ? 'Available'
-        : room.available === false
-          ? 'Booked'
-          : 'Availability not reported';
-
+export function RoomCard({ room, onChooseTime }: { room: Room; onChooseTime: () => void }) {
   return (
     <article className="sw-room" aria-label={room.name}>
       <RoomIllustration room={room} />
       <div className="sw-room-info">
         <div className="sw-room-heading">
           <h3>{room.name}</h3>
-          <span className={`sw-status ${canBook ? '' : 'busy'}`.trim()}>{status}</span>
+          {!room.active && <span className="sw-status busy">Inactive</span>}
         </div>
         <p className="sw-small">{room.location}</p>
         <div className="sw-facts">
@@ -42,17 +24,16 @@ export function RoomCard({ room, filters, hasInterval, onBook }: RoomCardProps) 
           </span>
         </div>
         <div className="sw-room-bottom">
-          <div>
-            <small>SELECTED TIME</small>
-            <strong>{hasInterval ? `${filters.start}–${filters.end}` : 'Not selected'}</strong>
-          </div>
+          <span className="sw-small">
+            {room.active ? 'View times for this room' : 'Currently unavailable'}
+          </span>
           <Button
-            variant={canBook ? 'primary' : 'secondary'}
-            disabled={!canBook}
-            onClick={() => onBook(room)}
-            aria-label={canBook ? `Book ${room.name}` : `${room.name}: ${status.toLowerCase()}`}
+            variant={room.active ? 'primary' : 'secondary'}
+            disabled={!room.active}
+            onClick={onChooseTime}
+            aria-label={room.active ? `Choose time for ${room.name}` : `${room.name}: inactive`}
           >
-            {hasInterval && !canBook ? 'Unavailable' : 'Book room'}
+            {room.active ? 'Choose time' : 'Unavailable'}
             <ArrowUpRight size={18} aria-hidden="true" />
           </Button>
         </div>

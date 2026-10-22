@@ -232,6 +232,47 @@ export type RoomAvailability = {
 };
 
 /**
+ * RoomDayAvailability
+ */
+export type RoomDayAvailability = {
+    /**
+     * Booking Window Ends At
+     */
+    booking_window_ends_at: string;
+    /**
+     * Date
+     */
+    date: string;
+    /**
+     * Generated At
+     */
+    generated_at: string;
+    room: RoomRead;
+    /**
+     * Slots
+     */
+    slots: Array<RoomStartChoice>;
+    /**
+     * Timezone
+     */
+    timezone?: 'Australia/Melbourne';
+};
+
+/**
+ * RoomEndChoice
+ */
+export type RoomEndChoice = {
+    /**
+     * Ends At
+     */
+    ends_at: string;
+    /**
+     * Time
+     */
+    time: string;
+};
+
+/**
  * RoomList
  */
 export type RoomList = {
@@ -277,6 +318,32 @@ export type RoomRead = {
      * Name
      */
     name: string;
+};
+
+/**
+ * RoomStartChoice
+ */
+export type RoomStartChoice = {
+    /**
+     * Available
+     */
+    available: boolean;
+    /**
+     * Starts At
+     */
+    starts_at: string | null;
+    /**
+     * Time
+     */
+    time: string;
+    /**
+     * Unavailable Reason
+     */
+    unavailable_reason: 'inactive' | 'schedule_unconfirmed' | 'past' | 'outside_horizon' | 'invalid_local_time' | 'unavailable' | null;
+    /**
+     * Valid Ends
+     */
+    valid_ends: Array<RoomEndChoice>;
 };
 
 /**
@@ -1023,6 +1090,106 @@ export type ListRoomsResponses = {
 };
 
 export type ListRoomsResponse = ListRoomsResponses[keyof ListRoomsResponses];
+
+export type GetRoomData = {
+    body?: never;
+    path: {
+        /**
+         * Room Id
+         */
+        room_id: string;
+    };
+    query?: {
+        /**
+         * Starts At
+         */
+        starts_at?: string | null;
+        /**
+         * Ends At
+         */
+        ends_at?: string | null;
+    };
+    url: '/api/v1/rooms/{room_id}';
+};
+
+export type GetRoomErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type GetRoomError = GetRoomErrors[keyof GetRoomErrors];
+
+export type GetRoomResponses = {
+    /**
+     * Response Getroom
+     *
+     * Successful Response
+     */
+    200: RoomAvailability | RoomRead;
+};
+
+export type GetRoomResponse = GetRoomResponses[keyof GetRoomResponses];
+
+export type GetRoomDayAvailabilityData = {
+    body?: never;
+    path: {
+        /**
+         * Room Id
+         */
+        room_id: string;
+    };
+    query: {
+        /**
+         * Date
+         */
+        date: string;
+    };
+    url: '/api/v1/rooms/{room_id}/availability';
+};
+
+export type GetRoomDayAvailabilityErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type GetRoomDayAvailabilityError = GetRoomDayAvailabilityErrors[keyof GetRoomDayAvailabilityErrors];
+
+export type GetRoomDayAvailabilityResponses = {
+    /**
+     * Successful Response
+     */
+    200: RoomDayAvailability;
+};
+
+export type GetRoomDayAvailabilityResponse = GetRoomDayAvailabilityResponses[keyof GetRoomDayAvailabilityResponses];
 
 export type GetHealthData = {
     body?: never;

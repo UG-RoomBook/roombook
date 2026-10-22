@@ -37,10 +37,11 @@ let bookingReads: URL[] = [];
 let receivedBody: unknown;
 
 const server = setupServer(
-  http.get('*/api/v1/auth/session', () => HttpResponse.json(mockSession)),
   http.get('*/api/v1/rooms', () =>
     HttpResponse.json({ items: [room], total: 1, limit: 100, offset: 0 }),
   ),
+  http.get('*/api/v1/auth/session', () => HttpResponse.json(mockSession)),
+  http.get('*/api/v1/rooms/:id', () => HttpResponse.json(room)),
   http.get('*/api/v1/bookings', ({ request }) => {
     const url = new URL(request.url);
     bookingReads.push(url);
@@ -101,6 +102,7 @@ function renderPage(path = reviewPath) {
         <LocationProbe />
         <Routes>
           <Route path="/account/*" element={<AccountPage />} />
+          <Route path="/rooms/:roomId" element={<h1>Choose time</h1>} />
           <Route path="/review" element={<ReviewBookingPage />} />
           <Route path="/bookings" element={<BookingsPage />} />
           <Route path="/" element={<h1>Find a room</h1>} />
@@ -147,7 +149,9 @@ describe('booking review', () => {
       }),
     );
     renderPage();
-    await screen.findByRole('button', { name: 'Confirm booking' });
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Confirm booking' })).toBeEnabled(),
+    );
     const form = screen.getByRole('form', { name: 'Confirm room booking' });
     fireEvent.submit(form);
     fireEvent.submit(form);
@@ -190,9 +194,9 @@ describe('booking review', () => {
     expect(screen.getByText('13:00–14:00')).toBeInTheDocument();
     expect(screen.getByTestId('location')).toHaveTextContent(`room_id=${room.id}`);
     expect(postCount).toBe(1);
-    await user.click(screen.getByRole('button', { name: 'Back' }));
+    await user.click(screen.getByRole('button', { name: 'Change time' }));
     expect(screen.getByTestId('location')).toHaveTextContent(
-      '/?date=2026-10-19&start=13%3A00&end=14%3A00&capacity=1&offset=20',
+      `/rooms/${room.id}?date=2026-10-19&start=13%3A00&end=14%3A00&capacity=1&offset=20`,
     );
   });
 
@@ -217,14 +221,7 @@ describe('booking review', () => {
     expect(postCount).toBe(1);
     view.unmount();
     server.use(
-      http.get('*/api/v1/rooms', () =>
-        HttpResponse.json({
-          items: [{ ...room, available: false }],
-          total: 1,
-          limit: 100,
-          offset: 0,
-        }),
-      ),
+      http.get('*/api/v1/rooms/:id', () => HttpResponse.json({ ...room, available: false })),
     );
     renderPage(`${reviewPath}&outcome=unknown`);
     await user.click(await screen.findByRole('button', { name: 'Retry saved booking' }));
@@ -400,7 +397,7 @@ describe('booking review', () => {
   it('can recover room details without losing the selected interval', async () => {
     const user = userEvent.setup();
     server.use(
-      http.get('*/api/v1/rooms', () =>
+      http.get('*/api/v1/rooms/:id', () =>
         HttpResponse.json(
           {
             error: {
@@ -415,11 +412,7 @@ describe('booking review', () => {
     renderPage();
     await waitFor(() => expect(clients.at(-1)?.getQueryData(['identity', 'session'])).toBeTruthy());
     expect(await screen.findByRole('alert')).toHaveTextContent('Room details unavailable');
-    server.use(
-      http.get('*/api/v1/rooms', () =>
-        HttpResponse.json({ items: [room], total: 1, limit: 100, offset: 0 }),
-      ),
-    );
+    server.use(http.get('*/api/v1/rooms/:id', () => HttpResponse.json(room)));
     await user.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByRole('button', { name: 'Confirm booking' })).toBeEnabled();
     expect(screen.getByText('13:00–14:00')).toBeInTheDocument();

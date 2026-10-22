@@ -48,9 +48,13 @@ jobs:
     name: Frontend checks
     uses: ./.github/workflows/frontend.yml
 
+  room-booking-checks:
+    name: Room booking browser checks
+    uses: ./.github/workflows/room-booking.yml
+
   build:
     name: Build, scan and publish image (CI server)
-    needs: [backend-checks, frontend-checks]
+    needs: [backend-checks, frontend-checks, room-booking-checks]
     runs-on: ${{ vars.RUNNER_MODE == 'hosted' && 'ubuntu-24.04' || 'ci' }}
     timeout-minutes: 30
     permissions:
