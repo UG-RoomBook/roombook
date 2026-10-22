@@ -6,6 +6,8 @@ name: Operations
 #                  database and checks it (proves backups are usable)
 #   monitoring     deploys Prometheus, Alertmanager and Grafana on Production
 #                  whenever their configuration changes on main
+#   room-hours     confirms Monday-Friday 09:00-17:00 opening hours for the
+#                  reference rooms in Production (RB-51 operator process)
 on:
   schedule:
     - cron: "30 16 * * *" # 03:30 Melbourne (AEDT)
@@ -21,7 +23,7 @@ on:
         required: true
         type: choice
         default: backup-and-drill
-        options: [backup-and-drill, monitoring]
+        options: [backup-and-drill, monitoring, room-hours]
 
 permissions:
   contents: read
@@ -123,3 +125,24 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           if [[ "$total" -eq 0 ]]; then echo "::error::Prometheus has no scrape targets; check its configuration"; exit 1; fi
           if [[ -n "$down" ]]; then echo "::error::Targets not up:"; echo "$down"; exit 1; fi
+
+  room-hours:
+    name: Confirm room hours (Production server)
+    if: inputs.task == 'room-hours'
+    runs-on: production
+    timeout-minutes: 10
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - name: Confirm Monday-Friday 09:00-17:00 for the reference rooms
+        run: |
+          # Rejected (and nothing written) if it would leave a booking outside the hours.
+          app=$(docker ps -q --filter "label=com.docker.compose.project=roombook-production" \
+                             --filter "label=com.docker.compose.service=app")
+          [[ -n "$app" ]] || { echo "::error::Deploy the application to Production first."; exit 1; }
+          docker exec "$app" python -m scripts.set_room_hours --confirm | tee "$RUNNER_TEMP/hours.jsonl"
+          {
+            echo "### Room hours (Production)"; echo
+            echo '```'; cat "$RUNNER_TEMP/hours.jsonl"; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

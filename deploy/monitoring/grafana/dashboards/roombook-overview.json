@@ -208,7 +208,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(roombook_http_requests_total{status=~\"5..\"}[5m])) / clamp_min(sum(rate(roombook_http_requests_total[5m])), 1e-9)",
+          "expr": "(sum(rate(roombook_http_requests_total{status=~\"5..\"}[5m])) or vector(0)) / clamp_min(sum(rate(roombook_http_requests_total[5m])), 1e-9)",
           "legendFormat": "",
           "instant": true
         }
