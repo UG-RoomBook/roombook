@@ -102,12 +102,21 @@ jobs:
       - name: Check every scrape target is up
         if: steps.stack.outputs.skip != 'true'
         run: |
-          for _ in $(seq 1 12); do
-            down=$(curl -fsS http://127.0.0.1:9090/api/v1/targets | jq -r '.data.activeTargets[] | select(.health != "up") | "\(.labels.job) \(.labels.host // "") \(.lastError)"')
-            [[ -z "$down" ]] && break
+          # Right after a (re)start Prometheus can report no targets until its first
+          # discovery cycle, so wait for targets to appear and for all of them to be up.
+          api=http://127.0.0.1:9090/api/v1/targets
+          total=0; down=""
+          for _ in $(seq 1 18); do
+            targets=$(curl -fsS "$api")
+            total=$(jq '.data.activeTargets | length' <<<"$targets")
+            down=$(jq -r '.data.activeTargets[] | select(.health != "up") | "\(.labels.job) \(.labels.host // "") \(.health) \(.lastError)"' <<<"$targets")
+            [[ "$total" -gt 0 && -z "$down" ]] && break
             sleep 10
           done
-          curl -fsS http://127.0.0.1:9090/api/v1/targets \
-            | jq -r '.data.activeTargets[] | "| \(.labels.job) | \(.labels.host // "-") | \(.health) |"' \
-            | { echo "| Job | Host | Health |"; echo "|---|---|---|"; cat; } >> "$GITHUB_STEP_SUMMARY"
-          if [[ -n "$down" ]]; then echo "::error::Targets down:"; echo "$down"; exit 1; fi
+          {
+            echo "$total scrape targets"; echo
+            echo "| Job | Host | Health |"; echo "|---|---|---|"
+            jq -r '.data.activeTargets[] | "| \(.labels.job) | \(.labels.host // "-") | \(.health) |"' <<<"$targets"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$total" -eq 0 ]]; then echo "::error::Prometheus has no scrape targets; check its configuration"; exit 1; fi
+          if [[ -n "$down" ]]; then echo "::error::Targets not up:"; echo "$down"; exit 1; fi
