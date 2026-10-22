@@ -153,6 +153,24 @@ shell with `sudo cat`). The **RoomBook overview** dashboard shows host CPU,
 memory, disk I/O, free disk, network, HTTP latency percentiles, request and
 error rates, container usage, the deployed commit and deployment annotations.
 
+## Room opening hours
+
+RB-51 keeps every room unavailable until its hours are confirmed. The reviewed
+operator command `scripts.set_room_hours` confirms Monday-Friday 09:00-17:00 for
+the two reference rooms (other days, times or rooms via `--days`, `--opens`,
+`--closes`, `--room`). It is a dry run without `--confirm`, does nothing when the
+hours are already set, and is rejected with `BOOKINGS_AFFECTED` (nothing written)
+if the change would leave an active or future booking outside the hours.
+
+| Environment | How it is applied |
+|---|---|
+| Testing | Every candidate run, after seeding the rooms |
+| Staging | Every candidate run, before the Staging browser journeys |
+| Production | Actions > **Operations** > Run workflow > `room-hours` (after a release) |
+
+The browser journeys in `tests/e2e/specs/booking.spec.ts` rely on these hours:
+a weekday interval must offer a bookable room and a Saturday must not.
+
 ## Failure handling
 
 | Symptom | First check | Recovery |
