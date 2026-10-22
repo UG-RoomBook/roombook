@@ -1,5 +1,5 @@
-import { useEffect, useId } from 'react';
-import { useForm } from 'react-hook-form';
+import { useEffect, useId, useMemo } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Search } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -7,12 +7,18 @@ import { z } from 'zod';
 import { useRooms } from '@/shared/api/queries';
 import { ApiError } from '@/shared/api/client';
 import type { Room, SearchFilters } from '@/shared/api/types';
-import { campusToday, formatCampusDate, toCampusInterval } from '@/shared/dates';
+import { bookingEndTimes, campusToday, formatCampusDate, toBookingInterval } from '@/shared/dates';
 import { Button, PageTitle, StateMessage } from '@/shared/ui';
 import { RoomCard } from './RoomCard';
+import './rooms.css';
 
 const PAGE_SIZE = 20;
 const CAPACITIES = [1, 4, 6, 8];
+const END_TIMES = Array.from(
+  { length: 24 * 60 },
+  (_, minute) =>
+    `${Math.floor(minute / 60)}`.padStart(2, '0') + ':' + `${minute % 60}`.padStart(2, '0'),
+);
 
 const searchSchema = z
   .object({
@@ -24,12 +30,12 @@ const searchSchema = z
   .superRefine((value, context) => {
     if (!value.date || !value.start || !value.end) return;
     try {
-      toCampusInterval(value);
+      toBookingInterval(value);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Choose a valid interval.';
       context.addIssue({
         code: 'custom',
-        path: [message.includes('date') ? 'date' : 'end'],
+        path: [message.includes('date') ? 'date' : message.includes('boundary') ? 'start' : 'end'],
         message,
       });
     }
@@ -48,7 +54,7 @@ function filtersFromUrl(params: URLSearchParams): SearchFilters {
 function intervalState(filters: SearchFilters) {
   if (!filters.start && !filters.end) return { hasInterval: false, error: '' };
   try {
-    toCampusInterval(filters);
+    toBookingInterval(filters);
     return { hasInterval: true, error: '' };
   } catch (error) {
     return {
@@ -76,15 +82,42 @@ export function FindRoomPage() {
     register,
     handleSubmit,
     reset,
+    control,
+    getValues,
+    setValue,
+    setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<SearchFilters>({
     resolver: zodResolver(searchSchema),
     defaultValues: applied,
   });
+  const [date, start] = useWatch({ control, name: ['date', 'start'] });
+  const endChoices = useMemo(() => bookingEndTimes(date, start), [date, start]);
+  const allowedEnds = useMemo(() => new Set(endChoices.times), [endChoices]);
+  const latestEnd = endChoices.times.at(-1);
+  const endHint =
+    !date || !start
+      ? 'Choose a date and start time first.'
+      : endChoices.error ||
+        (latestEnd
+          ? `Latest end time: ${latestEnd} Melbourne time, on the same day.`
+          : 'No valid end time fits after this start on the same day. Choose another start time.');
 
   useEffect(() => {
     reset(filtersFromUrl(new URLSearchParams(urlState)));
   }, [urlState, reset]);
+
+  function updateStart(field: 'date' | 'start', value: string) {
+    const current = { ...getValues(), [field]: value };
+    if (current.end && !bookingEndTimes(current.date, current.start).times.includes(current.end)) {
+      setValue('end', '', { shouldDirty: true });
+      setError('end', {
+        type: 'selectionChanged',
+        message: 'End time cleared because it no longer fits. Choose a new end time.',
+      });
+    }
+  }
 
   function search(value: SearchFilters) {
     setSearchParams({
@@ -150,7 +183,7 @@ export function FindRoomPage() {
             id={`${formId}-date`}
             type="date"
             required
-            {...register('date')}
+            {...register('date', { onChange: (event) => updateStart('date', event.target.value) })}
             aria-invalid={Boolean(errors.date)}
             aria-describedby={errors.date ? `${formId}-error` : undefined}
           />
@@ -160,22 +193,41 @@ export function FindRoomPage() {
           <input
             id={`${formId}-start`}
             type="time"
+            step={900}
             required
-            {...register('start')}
+            {...register('start', {
+              onChange: (event) => updateStart('start', event.target.value),
+            })}
             aria-invalid={Boolean(errors.start)}
             aria-describedby={errors.start ? `${formId}-error` : undefined}
           />
         </label>
         <label htmlFor={`${formId}-end`}>
           Until
-          <input
+          <select
             id={`${formId}-end`}
-            type="time"
             required
-            {...register('end')}
+            disabled={!latestEnd}
+            {...register('end', { onChange: () => clearErrors('end') })}
             aria-invalid={Boolean(errors.end)}
-            aria-describedby={errors.end ? `${formId}-error` : undefined}
-          />
+            aria-describedby={`${formId}-time-hint${errors.end ? ` ${formId}-error` : ''}`}
+          >
+            <option value="">Choose end time</option>
+            <optgroup label="Available end times">
+              {endChoices.times.map((time) => (
+                <option key={time} value={time}>
+                  {time}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Unavailable end times" disabled>
+              {END_TIMES.filter((time) => !allowedEnds.has(time)).map((time) => (
+                <option key={time} value={time} disabled>
+                  {time}
+                </option>
+              ))}
+            </optgroup>
+          </select>
         </label>
         <label htmlFor={`${formId}-capacity`}>
           People
@@ -195,6 +247,14 @@ export function FindRoomPage() {
             )}
           </select>
         </label>
+        <p
+          id={`${formId}-time-hint`}
+          className="sw-time-hint sw-small"
+          role="status"
+          aria-label="Booking duration"
+        >
+          Book for 30 minutes–2 hours. {endHint}
+        </p>
         <Button variant="primary" type="submit" disabled={isSubmitting}>
           Find rooms
           <Search size={18} aria-hidden="true" />

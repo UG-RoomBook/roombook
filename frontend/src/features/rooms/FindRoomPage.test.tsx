@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { setupServer } from 'msw/node';
@@ -59,6 +59,85 @@ function renderSearch(url = '/') {
 }
 
 describe('room discovery', () => {
+  it('disables end selection until a valid start and exposes both duration boundaries', async () => {
+    server.use(
+      http.get('*/api/v1/rooms', () =>
+        HttpResponse.json({ items: [], total: 0, limit: 20, offset: 0 }),
+      ),
+    );
+    renderSearch('/?date=2026-10-23');
+    expect(screen.getByLabelText('Until')).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: '13:00' } });
+    expect(screen.getByLabelText('Until')).toBeEnabled();
+    expect(screen.getByRole('option', { name: '13:29' })).toBeDisabled();
+    expect(screen.getByRole('option', { name: '13:30' })).toBeEnabled();
+    expect(screen.getByRole('option', { name: '15:00' })).toBeEnabled();
+    expect(screen.getByRole('option', { name: '15:01' })).toBeDisabled();
+    expect(screen.getByLabelText('Until')).toHaveAccessibleDescription(
+      /30 minutes–2 hours.*Latest end time: 15:00/,
+    );
+    await screen.findByText('No rooms on this page');
+  });
+
+  it('preserves a valid end and clears it with an explanation when the start changes', async () => {
+    server.use(
+      http.get('*/api/v1/rooms', () =>
+        HttpResponse.json({ items: [], total: 0, limit: 20, offset: 0 }),
+      ),
+    );
+    renderSearch(`/${selectedInterval}`);
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: '13:30' } });
+    expect(screen.getByLabelText('Until')).toHaveValue('14:00');
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: '14:00' } });
+    expect(screen.getByLabelText('Until')).toHaveValue('');
+    expect(screen.getByRole('alert')).toHaveTextContent('End time cleared');
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: '23:30' } });
+    expect(screen.getByLabelText('Until')).toBeDisabled();
+    expect(screen.getByRole('status', { name: 'Booking duration' })).toHaveTextContent(
+      'Choose another start time',
+    );
+    await screen.findByText('No rooms on this page');
+  });
+
+  it('recalculates on a date change into a DST gap and preserves ordinary valid changes', async () => {
+    server.use(
+      http.get('*/api/v1/rooms', () =>
+        HttpResponse.json({ items: [], total: 0, limit: 20, offset: 0 }),
+      ),
+    );
+    renderSearch('/?date=2026-10-02&start=01:30&end=02:30');
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-10-03' } });
+    expect(screen.getByLabelText('Until')).toHaveValue('02:30');
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-10-04' } });
+    expect(screen.getByLabelText('Until')).toHaveValue('');
+    expect(screen.getByRole('option', { name: '02:30' })).toBeDisabled();
+    expect(screen.getByRole('option', { name: '03:00' })).toBeEnabled();
+    expect(screen.getByRole('status', { name: 'Booking duration' })).toHaveTextContent(
+      'Latest end time: 04:30',
+    );
+    await screen.findByText('No rooms on this page');
+  });
+
+  it.each([
+    ['13:00', '13:29'],
+    ['13:00', '15:01'],
+    ['13:01', '14:00'],
+  ])('does not query availability for invalid URL policy %s–%s', async (start, end) => {
+    let requests = 0;
+    server.use(
+      http.get('*/api/v1/rooms', () => {
+        requests++;
+        return HttpResponse.json({ items: [], total: 0, limit: 20, offset: 0 });
+      }),
+    );
+    renderSearch(`/?date=2026-10-23&start=${start}&end=${end}`);
+    expect(screen.getByRole('alert')).toBeVisible();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(requests).toBe(0);
+  });
+
   it('shows metadata without inventing availability before a valid interval is selected', async () => {
     let sentUrl: URL | undefined;
     server.use(
@@ -97,14 +176,12 @@ describe('room discovery', () => {
     await user.click(screen.getByRole('button', { name: 'Find rooms' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Choose a start time.');
     await user.type(screen.getByLabelText('From'), '13:00');
-    await user.type(screen.getByLabelText('Until'), '12:00');
+    await user.selectOptions(screen.getByLabelText('Until'), '12:00');
+    expect(screen.getByLabelText('Until')).toHaveValue('');
     await user.click(screen.getByRole('button', { name: 'Find rooms' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Choose an end time after the start time.',
-    );
+    expect(await screen.findByRole('alert')).toHaveTextContent('Choose an end time.');
     expect(requests).toHaveLength(1);
-    await user.clear(screen.getByLabelText('Until'));
-    await user.type(screen.getByLabelText('Until'), '14:00');
+    await user.selectOptions(screen.getByLabelText('Until'), '14:00');
     await user.selectOptions(screen.getByLabelText('People'), '4');
     await user.click(screen.getByRole('button', { name: 'Find rooms' }));
     const book = await screen.findByRole('button', { name: 'Book The Studio' });
@@ -226,8 +303,7 @@ describe('room discovery', () => {
     expect(screen.getByText('Page 2')).toBeVisible();
     await user.clear(screen.getByLabelText('From'));
     await user.type(screen.getByLabelText('From'), '15:00');
-    await user.clear(screen.getByLabelText('Until'));
-    await user.type(screen.getByLabelText('Until'), '16:00');
+    await user.selectOptions(screen.getByLabelText('Until'), '16:00');
     await user.selectOptions(screen.getByLabelText('People'), '4');
     await user.click(screen.getByRole('button', { name: 'Find rooms' }));
     await waitFor(() => expect(screen.getByText('Page 1')).toBeVisible());

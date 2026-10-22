@@ -1,0 +1,27 @@
+#rb-swinburne .sw-time-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+#rb-swinburne .sw-search select[name='end'] {
+  min-height: 44px;
+}
+
+#rb-swinburne .sw-search select:disabled,
+#rb-swinburne .sw-search option:disabled {
+  color: var(--sub);
+  background: var(--soft);
+  cursor: not-allowed;
+}
+
+#rb-swinburne .sw-search select:disabled {
+  opacity: 0.6;
+  border-color: var(--line);
+}
+
+@media (min-width: 1200px) {
+  #rb-swinburne form.sw-search .sw-btn {
+    grid-column: 5;
+    grid-row: 1;
+  }
+}
