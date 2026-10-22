@@ -51,7 +51,7 @@ failures preserve the selection and have explicit feedback.
 | Concurrent competing booking | Real 409; selection retained, availability refreshed, confirm disabled |
 | Session revoked before confirmation | Real session 401; no booking POST; same selection restored after sign-in |
 | Normal confirmation → reload | Receipt retained; no second POST |
-| Themes and responsive checks | Guest, uncertain, conflict, expired-session and success states captured in both themes; receipt fits 375px mobile and 1440px desktop without horizontal overflow |
+| Themes and responsive checks | Guest, uncertain, conflict, expired-session and success states checked in Light and Dark; retained screenshots exclude transition frames. Receipt fits 375px mobile and 1440px desktop without horizontal overflow |
 
 Raw [frontend tests](evidence/RB-16/frontend-tests.txt),
 [frontend checks](evidence/RB-16/frontend-checks.txt),
@@ -61,7 +61,7 @@ Raw [frontend tests](evidence/RB-16/frontend-tests.txt),
 Database counts: [before retry](evidence/RB-16/database-before-retry.json),
 [after retry](evidence/RB-16/database-after-retry.json).
 Screenshots are in [the evidence directory](evidence/RB-16/), including
-[normal confirmation](evidence/RB-16/normal-success-light.jpg),
+[normal confirmation](evidence/RB-16/normal-success-dark.jpg),
 [uncertain outcome](evidence/RB-16/uncertain-dark.jpg) and
 [conflict](evidence/RB-16/conflict-light.jpg).
 
