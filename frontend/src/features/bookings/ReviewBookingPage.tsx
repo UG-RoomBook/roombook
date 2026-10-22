@@ -2,30 +2,44 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useMutationState } from '@tanstack/react-query';
 import { ArrowRight } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useCreateBooking, useRoom } from '@/shared/api/queries';
-import { ApiError } from '@/shared/api/client';
-import { campusToday, formatCampusDate, toCampusInterval } from '@/shared/dates';
+import { useRoom } from '@/shared/api/queries';
+import type { CreatedBooking } from '@/shared/api/client';
+import { useAccountSession } from '@/features/accounts/session';
+import type { AccountSession } from '@/features/accounts/api';
+import { campusToday, formatCampusDate, toBookingInterval } from '@/shared/dates';
 import { RoomIllustration } from '@/shared/illustrations/RoomIllustration';
 import { Button, PageTitle, StateMessage } from '@/shared/ui';
 import { bookingFeedback, type BookingFeedback } from './booking-error';
-import { readBookingSelection, searchPath, type BookingSelection } from './selection';
+import { readBookingSelection, searchPath } from './selection';
+import { loadAttempt, useCreateBooking } from './submission';
 import './bookings.css';
 
-function matchesSelection(variables: unknown, selection: BookingSelection | null) {
-  if (!selection || typeof variables !== 'object' || variables === null) return false;
-  if (!('room_id' in variables) || !('starts_at' in variables) || !('ends_at' in variables))
-    return false;
-  const interval = toCampusInterval(selection);
+export function ReviewBookingPage() {
+  const session = useAccountSession();
+  const [params] = useSearchParams();
+  const identity = !session.isError ? session.data?.user.id : undefined;
   return (
-    variables.room_id === selection.roomId &&
-    typeof variables.starts_at === 'string' &&
-    typeof variables.ends_at === 'string' &&
-    Date.parse(variables.starts_at) === Date.parse(interval.starts_at) &&
-    Date.parse(variables.ends_at) === Date.parse(interval.ends_at)
+    <ReviewContent
+      key={`${identity ?? 'guest'}:${params.get('room_id')}:${params.get('date')}:${params.get('start')}:${params.get('end')}`}
+      session={session.isError ? null : (session.data ?? null)}
+      sessionPending={session.isPending}
+      sessionError={session.error}
+      retrySession={() => void session.refetch()}
+    />
   );
 }
 
-export function ReviewBookingPage() {
+function ReviewContent({
+  session,
+  sessionPending,
+  sessionError,
+  retrySession,
+}: {
+  session: AccountSession | null;
+  sessionPending: boolean;
+  sessionError: Error | null;
+  retrySession: () => void;
+}) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const { selection, error: selectionError } = useMemo(
@@ -34,32 +48,38 @@ export function ReviewBookingPage() {
   );
   const fallback = { date: campusToday(), start: '13:00', end: '14:00', capacity: 1 };
   const roomQuery = useRoom(selection?.roomId ?? '', selection ?? fallback, Boolean(selection));
-  const createBooking = useCreateBooking();
+  const mutation = useCreateBooking();
   const submissions = useMutationState({
     filters: { mutationKey: ['bookings', 'create'] },
-    select: (mutation) => ({
-      status: mutation.state.status,
-      variables: mutation.state.variables,
-      error: mutation.state.error,
-    }),
+    select: (item) => ({ status: item.state.status, variables: item.state.variables }),
   });
-  const submissionLock = useRef(false);
+  const lock = useRef(false);
   const mounted = useRef(false);
+  const [receipt, setReceipt] = useState<CreatedBooking | null>(null);
+  const [retryReady, setRetryReady] = useState(true);
   const [feedback, setFeedback] = useState<BookingFeedback | null>(null);
-  const matchingSubmissions = submissions.filter((submission) =>
-    matchesSelection(submission.variables, selection),
-  );
-  const creating =
-    createBooking.isPending ||
-    matchingSubmissions.some((submission) => submission.status === 'pending');
-  const priorUncertain = matchingSubmissions.some(
-    (submission) =>
-      submission.status === 'error' &&
-      submission.error instanceof ApiError &&
-      submission.error.uncertain,
-  );
-  const uncertain =
-    params.get('outcome') === 'unknown' || feedback?.uncertain === true || priorUncertain;
+  const body = selection ? { room_id: selection.roomId, ...toBookingInterval(selection) } : null;
+  const matching = submissions.filter(({ variables }) => {
+    if (!session || !body || !variables || typeof variables !== 'object') return false;
+    const value = variables as { ownerId?: string; body?: typeof body };
+    return (
+      value.ownerId === session.user.id &&
+      value.body?.room_id === body.room_id &&
+      value.body.starts_at === body.starts_at &&
+      value.body.ends_at === body.ends_at
+    );
+  });
+  let saved = null;
+  let storageError: Error | null = null;
+  try {
+    if (session && body) saved = loadAttempt(session.user.id, body);
+  } catch (error) {
+    storageError = error as Error;
+  }
+  const creating = mutation.isPending || matching.some((item) => item.status === 'pending');
+  const confirmed = receipt ?? saved?.receipt;
+  const uncertain = saved?.state === 'pending' || feedback?.uncertain === true;
+  const lostAttempt = params.get('outcome') === 'unknown' && !saved;
   const room = roomQuery.data;
   const unavailable = room?.active === false || room?.available === false;
   const exceedsCapacity = Boolean(room && selection && selection.capacity > room.capacity);
@@ -70,80 +90,161 @@ export function ReviewBookingPage() {
       mounted.current = false;
     };
   }, []);
-
   useEffect(() => {
-    if (priorUncertain && params.get('outcome') !== 'unknown') {
-      setParams(
-        (current) => {
-          const next = new URLSearchParams(current);
-          next.set('outcome', 'unknown');
-          return next;
-        },
-        { replace: true },
-      );
-    }
-  }, [priorUncertain, params, setParams]);
+    if (retryReady) return;
+    const timer = setTimeout(() => setRetryReady(true), 1000);
+    return () => clearTimeout(timer);
+  }, [retryReady]);
 
   async function confirmBooking(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (
       !selection ||
-      !room ||
-      unavailable ||
-      exceedsCapacity ||
-      uncertain ||
-      submissionLock.current ||
-      creating
-    ) {
+      !body ||
+      !session ||
+      confirmed ||
+      storageError ||
+      lostAttempt ||
+      ((!room || unavailable || exceedsCapacity) && !uncertain) ||
+      lock.current ||
+      creating ||
+      !retryReady
+    )
       return;
-    }
-    submissionLock.current = true;
+    lock.current = true;
     setFeedback(null);
     try {
-      const interval = toCampusInterval(selection);
-      await createBooking.mutateAsync({ room_id: room.id, ...interval });
-      if (!mounted.current) return;
-      navigate(`/bookings?${new URLSearchParams({ date: selection.date }).toString()}`, {
-        state: {
-          notice: `Booking confirmed: ${room.name}, ${formatCampusDate(selection.date)}, ${selection.start}–${selection.end}.`,
-        },
-      });
-    } catch (error) {
-      if (!mounted.current) return;
-      const nextFeedback = bookingFeedback(error);
-      setFeedback(nextFeedback);
-      if (nextFeedback.uncertain) {
+      const result = await mutation.mutateAsync({ ownerId: session.user.id, body });
+      if (mounted.current) {
+        setReceipt(result);
         setParams(
           (current) => {
-            const next = new URLSearchParams(current);
-            next.set('outcome', 'unknown');
-            return next;
+            const value = new URLSearchParams(current);
+            value.delete('outcome');
+            return value;
+          },
+          { replace: true },
+        );
+      }
+    } catch (error) {
+      if (!mounted.current) return;
+      const next = bookingFeedback(error);
+      setFeedback(next);
+      if (next.uncertain) {
+        setRetryReady(false);
+        setParams(
+          (current) => {
+            const value = new URLSearchParams(current);
+            value.set('outcome', 'unknown');
+            return value;
           },
           { replace: true },
         );
       }
     } finally {
-      submissionLock.current = false;
+      lock.current = false;
     }
   }
-
-  function checkBookings() {
-    if (selection) {
-      navigate(`/bookings?${new URLSearchParams({ date: selection.date }).toString()}`);
-    }
-  }
-
+  const signIn = () =>
+    navigate(`/account/login?${new URLSearchParams({ next: `/review?${params}` })}`);
+  const back = () => navigate(searchPath(params));
+  const feedbackView = sessionPending ? (
+    <StateMessage title="Checking your session" message="Please wait before confirming." />
+  ) : sessionError ? (
+    <StateMessage
+      title="Session unavailable"
+      message="Your selection is kept. Check your session before confirming."
+      variant="error"
+      onRetry={retrySession}
+    />
+  ) : !session ? (
+    <StateMessage
+      title="Sign in to book"
+      message="Use a verified, active account. Your room and time will be kept."
+    />
+  ) : storageError ? (
+    <StateMessage
+      title="Saved attempt unavailable"
+      message={storageError.message}
+      variant="error"
+    />
+  ) : lostAttempt ? (
+    <StateMessage
+      title="Booking outcome not confirmed"
+      message="The saved request key is missing. Return to the original tab or contact support before creating another reservation for this time."
+      variant="error"
+    />
+  ) : feedback ? (
+    <StateMessage title={feedback.title} message={feedback.message} variant="error" />
+  ) : uncertain ? (
+    <StateMessage
+      title="Booking outcome not confirmed"
+      message="The request may have completed. Retry this saved attempt to confirm the original result. Keep this tab until the outcome is known."
+      variant="error"
+    />
+  ) : unavailable ? (
+    <StateMessage
+      title="Room no longer available"
+      message="Your selection is kept. Choose another room or time."
+      variant="error"
+    />
+  ) : exceedsCapacity ? (
+    <StateMessage
+      title="Group exceeds room capacity"
+      message="Choose a room with enough places for the selected group size."
+      variant="error"
+    />
+  ) : null;
+  const submit = !session ? (
+    <Button variant="primary" onClick={signIn} disabled={sessionPending}>
+      Sign in to book
+    </Button>
+  ) : (
+    <Button
+      variant="primary"
+      type="submit"
+      disabled={
+        creating ||
+        !retryReady ||
+        Boolean(storageError) ||
+        lostAttempt ||
+        Boolean(sessionError) ||
+        (!uncertain && (unavailable || exceedsCapacity))
+      }
+      aria-busy={creating}
+    >
+      {creating ? 'Confirming booking' : uncertain ? 'Retry saved booking' : 'Confirm booking'}
+      <ArrowRight aria-hidden="true" />
+    </Button>
+  );
   return (
     <section className="sw-review" data-page="review" aria-label="Review booking">
       <PageTitle title="Review booking" description="Check the room and time before confirming." />
       {selectionError ? (
         <>
           <StateMessage title="Check your selection" message={selectionError} variant="error" />
-          <Button onClick={() => navigate(searchPath(params))}>Back to search</Button>
+          <Button onClick={back}>Back to search</Button>
+        </>
+      ) : confirmed && selection ? (
+        <>
+          <div role="status" className="sw-booking-receipt">
+            <h2>Booking confirmed</h2>
+            <p>
+              {room?.name ?? 'Selected room'} · {formatCampusDate(selection.date)} ·{' '}
+              {selection.start}–{selection.end} Melbourne
+            </p>
+            <p>
+              Booking reference: <strong>{confirmed.id}</strong>
+            </p>
+            <p>
+              Keep this booking reference. Booking history and cancellation are not available yet.
+            </p>
+          </div>
+          <Button onClick={back}>Back to search</Button>
         </>
       ) : roomQuery.isPending ? (
         <StateMessage title="Loading room" message="Checking the selected room and time." />
-      ) : roomQuery.isError || !room ? (
+      ) : (roomQuery.isError || !room) && !uncertain ? (
         <>
           <StateMessage
             title="Room details unavailable"
@@ -151,39 +252,19 @@ export function ReviewBookingPage() {
             variant="error"
             onRetry={() => void roomQuery.refetch()}
           />
-          <Button onClick={() => navigate(searchPath(params))}>Back to search</Button>
+          <Button onClick={back}>Back to search</Button>
         </>
       ) : selection ? (
         <>
-          {feedback ? (
-            <StateMessage title={feedback.title} message={feedback.message} variant="error" />
-          ) : uncertain ? (
-            <StateMessage
-              title="Booking outcome not confirmed"
-              message="The request may have completed. Check bookings before creating another booking for this room and time."
-              variant="error"
-            />
-          ) : unavailable ? (
-            <StateMessage
-              title="Room no longer available"
-              message="Your selection is kept. Choose another room or time."
-              variant="error"
-            />
-          ) : exceedsCapacity ? (
-            <StateMessage
-              title="Group exceeds room capacity"
-              message="Choose a room with enough places for the selected group size."
-              variant="error"
-            />
-          ) : null}
+          {feedbackView}
           <div className="sw-review-layout">
-            <RoomIllustration room={room} />
+            {room && <RoomIllustration room={room} />}
             <form
               onSubmit={(event) => void confirmBooking(event)}
               aria-label="Confirm room booking"
             >
-              <h2>{room.name}</h2>
-              <p className="sw-small">{room.location}</p>
+              <h2>{room?.name ?? 'Selected room'}</h2>
+              <p className="sw-small">{room?.location}</p>
               <dl className="sw-summary">
                 <div>
                   <dt>Date</dt>
@@ -195,35 +276,22 @@ export function ReviewBookingPage() {
                     {selection.start}–{selection.end}
                   </dd>
                 </div>
-                <div>
-                  <dt>Capacity</dt>
-                  <dd>{room.capacity} people</dd>
-                </div>
+                {room && (
+                  <div>
+                    <dt>Capacity</dt>
+                    <dd>{room.capacity} people</dd>
+                  </div>
+                )}
                 <div>
                   <dt>Time zone</dt>
                   <dd>Melbourne</dd>
                 </div>
               </dl>
               <div className="sw-actions">
-                <Button disabled={creating} onClick={() => navigate(searchPath(params))}>
+                <Button disabled={creating} onClick={back}>
                   Back
                 </Button>
-                {uncertain ? (
-                  <Button variant="primary" onClick={checkBookings}>
-                    Check bookings
-                    <ArrowRight aria-hidden="true" />
-                  </Button>
-                ) : (
-                  <Button
-                    variant="primary"
-                    type="submit"
-                    disabled={creating || unavailable || exceedsCapacity}
-                    aria-busy={creating}
-                  >
-                    {creating ? 'Confirming booking' : 'Confirm booking'}
-                    <ArrowRight aria-hidden="true" />
-                  </Button>
-                )}
+                {submit}
               </div>
             </form>
           </div>

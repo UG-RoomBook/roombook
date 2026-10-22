@@ -21,5 +21,6 @@ if (!window.matchMedia) {
 afterEach(() => {
   cleanup();
   window.localStorage.clear();
+  window.sessionStorage.clear();
   vi.unstubAllGlobals();
 });

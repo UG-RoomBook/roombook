@@ -218,7 +218,10 @@ function AccountForm({ mode }: { mode: string }) {
         {Object.entries(titles)
           .filter(([key]) => !['reset', 'email', mode].includes(key))
           .map(([key, title]) => (
-            <Link key={key} to={`/account/${key}`}>
+            <Link
+              key={key}
+              to={`/account/${key}?${new URLSearchParams({ next: safeReturnTo(params.get('next')) })}`}
+            >
               {title}
             </Link>
           ))}

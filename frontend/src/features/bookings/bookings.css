@@ -47,3 +47,11 @@
     max-width: none;
   }
 }
+
+#rb-swinburne .sw-booking-receipt {
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow-wrap: anywhere;
+}

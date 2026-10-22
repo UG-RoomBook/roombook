@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
-import { handlers } from '@/mocks/handlers';
+import { handlers, mockSession } from '@/mocks/handlers';
 import { mockRooms, resetMockData } from '@/mocks/data';
 import { api, ApiError, REQUEST_TIMEOUT_MS } from './client';
 import { fetchRoomCatalog } from './queries';
@@ -21,6 +21,13 @@ const input = {
   room_id: mockRooms[0]!.id,
   starts_at: '2026-10-19T13:00:00+11:00',
   ends_at: '2026-10-19T14:00:00+11:00',
+};
+
+const submission = {
+  body: input,
+  ownerId: mockSession.user.id,
+  csrfToken: mockSession.csrf_token,
+  idempotencyKey: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
 };
 
 describe('API boundary', () => {
@@ -113,7 +120,6 @@ describe('API boundary', () => {
     vi.stubEnv('VITE_ENABLE_MOCKS', 'false');
     const fetch = vi.spyOn(globalThis, 'fetch');
     const expected = { status: 501, code: 'FEATURE_NOT_AVAILABLE', uncertain: false };
-    await expect(api.createBooking(input)).rejects.toMatchObject(expected);
     await expect(api.cancelBooking('20000000-0000-4000-8000-000000000001')).rejects.toMatchObject(
       expected,
     );
@@ -123,23 +129,32 @@ describe('API boundary', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('enables provisional booking requests only with the development mock opt-in', async () => {
-    vi.stubEnv('MODE', 'development');
-    vi.stubEnv('DEV', true);
-    vi.stubEnv('VITE_ENABLE_MOCKS', 'true');
-    expect(await api.createBooking(input)).toMatchObject({
-      room_id: input.room_id,
-      status: 'active',
-    });
-  });
-
-  it('does not enable provisional booking requests in production when a mock flag is set', async () => {
-    vi.stubEnv('MODE', 'production');
+  it('uses the real generated create operation in production with same-origin credentials and required headers', async () => {
     vi.stubEnv('DEV', false);
-    vi.stubEnv('VITE_ENABLE_MOCKS', 'true');
-    const fetch = vi.spyOn(globalThis, 'fetch');
-    await expect(api.createBooking(input)).rejects.toMatchObject({ code: 'FEATURE_NOT_AVAILABLE' });
-    expect(fetch).not.toHaveBeenCalled();
+    vi.stubEnv('MODE', 'production');
+    server.use(
+      http.post('*/api/v1/bookings', async ({ request }) => {
+        expect(request.credentials).toBe('same-origin');
+        expect(request.cache).toBe('no-store');
+        expect(request.headers.get('X-CSRF-Token')).toBe(submission.csrfToken);
+        expect(request.headers.get('Idempotency-Key')).toBe(submission.idempotencyKey);
+        expect(await request.json()).toEqual(input);
+        return HttpResponse.json(
+          {
+            ...input,
+            id: crypto.randomUUID(),
+            owner_id: submission.ownerId,
+            status: 'active',
+            created_at: new Date().toISOString(),
+          },
+          { status: 201 },
+        );
+      }),
+    );
+    expect(await api.createBooking(submission)).toMatchObject({
+      room_id: input.room_id,
+      owner_id: submission.ownerId,
+    });
   });
 
   it('does not enable provisional booking requests in a production build using test mode', async () => {
@@ -148,7 +163,6 @@ describe('API boundary', () => {
     vi.stubEnv('VITE_ENABLE_MOCKS', 'true');
     const fetch = vi.spyOn(globalThis, 'fetch');
     const expected = { status: 501, code: 'FEATURE_NOT_AVAILABLE', uncertain: false };
-    await expect(api.createBooking(input)).rejects.toMatchObject(expected);
     await expect(api.cancelBooking('20000000-0000-4000-8000-000000000001')).rejects.toMatchObject(
       expected,
     );
@@ -159,7 +173,7 @@ describe('API boundary', () => {
   });
 
   it('preserves an explicit-offset booking interval and observes cancellation', async () => {
-    const booking = await api.createBooking(input);
+    const booking = await api.createBooking(submission);
     expect(booking).toMatchObject({ ...input, status: 'active' });
     const cancelled = await api.cancelBooking(booking.id);
     expect(cancelled.status).toBe('cancelled');
@@ -172,8 +186,8 @@ describe('API boundary', () => {
   });
 
   it('retains status, code and request correlation on a conflict', async () => {
-    await api.createBooking(input);
-    await expect(api.createBooking(input)).rejects.toMatchObject({
+    await api.createBooking(submission);
+    await expect(api.createBooking(submission)).rejects.toMatchObject({
       status: 409,
       code: 'BOOKING_CONFLICT',
       requestId: 'mock-request',
@@ -192,7 +206,7 @@ describe('API boundary', () => {
 
   it('treats an invalid create response as an uncertain outcome', async () => {
     server.use(http.post('*/api/v1/bookings', () => HttpResponse.json({}, { status: 201 })));
-    await expect(api.createBooking(input)).rejects.toMatchObject({
+    await expect(api.createBooking(submission)).rejects.toMatchObject({
       code: 'INVALID_RESPONSE',
       uncertain: true,
     });
@@ -200,7 +214,10 @@ describe('API boundary', () => {
 
   it('treats a failed mutation connection as uncertain', async () => {
     server.use(http.post('*/api/v1/bookings', () => HttpResponse.error()));
-    await expect(api.createBooking(input)).rejects.toMatchObject({ status: 0, uncertain: true });
+    await expect(api.createBooking(submission)).rejects.toMatchObject({
+      status: 0,
+      uncertain: true,
+    });
   });
 
   it('keeps a successful create with unreadable JSON uncertain', async () => {
@@ -214,8 +231,48 @@ describe('API boundary', () => {
           }),
       ),
     );
-    await expect(api.createBooking(input)).rejects.toMatchObject({
+    await expect(api.createBooking(submission)).rejects.toMatchObject({
       status: 201,
+      code: 'INVALID_RESPONSE',
+      uncertain: true,
+    });
+  });
+
+  it.each(['REQUEST_IN_PROGRESS', 'BOOKING_BUSY'])(
+    'keeps %s retryable with the original key',
+    async (code) => {
+      server.use(
+        http.post('*/api/v1/bookings', () =>
+          HttpResponse.json(
+            { error: { code, message: 'Retry the same attempt.' } },
+            { status: 409 },
+          ),
+        ),
+      );
+      await expect(api.createBooking(submission)).rejects.toMatchObject({
+        code,
+        status: 409,
+        uncertain: true,
+      });
+    },
+  );
+
+  it('rejects a response owned by a different user', async () => {
+    server.use(
+      http.post('*/api/v1/bookings', () =>
+        HttpResponse.json(
+          {
+            ...input,
+            id: crypto.randomUUID(),
+            owner_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+            status: 'active',
+            created_at: new Date().toISOString(),
+          },
+          { status: 201 },
+        ),
+      ),
+    );
+    await expect(api.createBooking(submission)).rejects.toMatchObject({
       code: 'INVALID_RESPONSE',
       uncertain: true,
     });
@@ -233,7 +290,7 @@ describe('API boundary', () => {
           );
         }),
     );
-    const outcome = api.createBooking(input).catch((error: unknown) => error);
+    const outcome = api.createBooking(submission).catch((error: unknown) => error);
     await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
     expect(await outcome).toBeInstanceOf(ApiError);
     expect(await outcome).toMatchObject({ uncertain: true });
