@@ -2,6 +2,25 @@ import { describe, expect, it } from 'vitest';
 import { bookingDateSchema, readBookingSelection, readOffset, searchPath } from './selection';
 
 describe('booking route selection', () => {
+  it.each([
+    ['13:00', '13:29'],
+    ['13:00', '15:01'],
+    ['13:01', '14:00'],
+  ])('rejects an invalid direct review URL: %s–%s', (start, end) => {
+    const params = new URLSearchParams({ room_id: 'studio', date: '2026-10-23', start, end });
+    expect(readBookingSelection(params).selection).toBeNull();
+  });
+
+  it.each(['13:30', '15:00'])('accepts the duration boundary in a review URL: %s', (end) => {
+    const params = new URLSearchParams({
+      room_id: 'studio',
+      date: '2026-10-23',
+      start: '13:00',
+      end,
+    });
+    expect(readBookingSelection(params).selection?.end).toBe(end);
+  });
+
   it('requires a room and positive group size', () => {
     expect(readBookingSelection(new URLSearchParams()).selection).toBeNull();
     expect(

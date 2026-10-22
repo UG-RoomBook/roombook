@@ -65,6 +65,52 @@ export function toCampusInterval({ date, start, end }: CampusIntervalInput): Cam
   return { starts_at: offsetTimestamp(startsAt), ends_at: offsetTimestamp(endsAt) };
 }
 
+const MIN_BOOKING_MINUTES = 30;
+const MAX_BOOKING_MINUTES = 120;
+
+function bookingStart(date: string, start: string) {
+  const value = campusDateTime(parseDate(date), start);
+  if (value.minute % 15 !== 0) {
+    throw new RangeError('Choose a start time on a 15-minute boundary.');
+  }
+  return value;
+}
+
+/** Selection rules only; the server still checks its clock, horizon and room calendar. */
+export function toBookingInterval(input: CampusIntervalInput): CampusInterval {
+  bookingStart(input.date, input.start);
+  const interval = toCampusInterval(input);
+  const minutes = (Date.parse(interval.ends_at) - Date.parse(interval.starts_at)) / 60_000;
+  if (minutes < MIN_BOOKING_MINUTES || minutes > MAX_BOOKING_MINUTES) {
+    throw new RangeError('Choose a duration from 30 minutes to 2 hours.');
+  }
+  return interval;
+}
+
+/** Keep minute precision and use elapsed time, including across Melbourne DST changes. */
+export function bookingEndTimes(date: string, start: string): { times: string[]; error: string } {
+  try {
+    const begins = bookingStart(date, start);
+    const day = begins.toPlainDate();
+    const times: string[] = [];
+    for (let minutes = MIN_BOOKING_MINUTES; minutes <= MAX_BOOKING_MINUTES; minutes++) {
+      const end = begins.add({ minutes });
+      if (!end.toPlainDate().equals(day)) continue;
+      const time = end.toPlainTime().toString({ smallestUnit: 'minute' });
+      try {
+        // A repeated endpoint is invalid even when elapsed arithmetic picked an offset.
+        campusDateTime(day, time);
+        times.push(time);
+      } catch {
+        continue;
+      }
+    }
+    return { times, error: '' };
+  } catch (error) {
+    return { times: [], error: error instanceof Error ? error.message : 'Choose a valid start.' };
+  }
+}
+
 /** Melbourne calendar boundaries cover 23, 24 or 25 hours as appropriate. */
 export function campusDayRange(date: string): CampusInterval {
   const day = parseDate(date);

@@ -1,0 +1,25 @@
+INFO:     Started server process [107662]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:41944 - "GET /version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41952 - "GET /api/v1/auth/[redacted] HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:35666 - "GET /api/v1/rooms?starts_at=2026-10-23T13%3A00%3A00%2B11%3A00&ends_at=2026-10-23T13%3A30%3A00%2B11%3A00&limit=20&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35674 - "GET /api/v1/rooms?starts_at=2026-10-23T13%3A00%3A00%2B11%3A00&ends_at=2026-10-23T15%3A00%3A00%2B11%3A00&limit=20&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56878 - "GET /api/v1/rooms?starts_at=2026-10-23T14%3A45%3A00%2B11%3A00&ends_at=2026-10-23T15%3A15%3A00%2B11%3A00&limit=20&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56890 - "GET /api/v1/rooms?starts_at=2026-10-23T14%3A45%3A00%2B11%3A00&ends_at=2026-10-23T15%3A15%3A00%2B11%3A00&limit=100&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45134 - "GET /api/v1/auth/[redacted] HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:45124 - "GET /version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45150 - "GET /version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45156 - "GET /api/v1/auth/[redacted] HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:45140 - "GET /api/v1/rooms?starts_at=2026-10-23T13%3A00%3A00%2B11%3A00&ends_at=2026-10-23T15%3A00%3A00%2B11%3A00&limit=20&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56438 - "GET /api/v1/rooms?starts_at=2026-10-23T13%3A00%3A00%2B11%3A00&ends_at=2026-10-23T15%3A00%3A00%2B11%3A00&limit=20&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48486 - "GET /api/v1/rooms?starts_at=2026-10-23T13%3A00%3A00%2B11%3A00&ends_at=2026-10-23T13%3A29%3A00%2B11%3A00 HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:48488 - "GET /api/v1/rooms?starts_at=2026-10-23T13%3A00%3A00%2B11%3A00&ends_at=2026-10-23T13%3A30%3A00%2B11%3A00 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48502 - "GET /api/v1/rooms?starts_at=2026-10-23T13%3A00%3A00%2B11%3A00&ends_at=2026-10-23T15%3A00%3A00%2B11%3A00 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48508 - "GET /api/v1/rooms?starts_at=2026-10-23T13%3A00%3A00%2B11%3A00&ends_at=2026-10-23T15%3A01%3A00%2B11%3A00 HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:48514 - "GET /ready HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [107662]

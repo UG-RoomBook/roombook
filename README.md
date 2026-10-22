@@ -45,6 +45,8 @@ Existing reference rooms intentionally remain unconfirmed and unavailable until 
 
 Room search keeps applied filters and pagination in the URL. Group size filters the current API page, so paginated counts and empty states describe that page. Availability is withheld while refreshing; failed requests show retry feedback and a request ID when supplied. Metadata without a selected interval does not claim availability. See the [RB-14 verification record](docs/frontend/RB-14-verification.md) for real browser/API observations and remaining acceptance work.
 
+The booking end-time picker enables 30–120 elapsed minutes after a valid 15-minute start, with other same-day times greyed out. Changing the start or date preserves a valid end or clears it with an explanation. Search and review links validate the same selection rules, including Melbourne DST, while the API checks its clock, horizon and room availability. See the [RB-57 verification record](docs/frontend/RB-57-verification.md).
+
 ## Backend checks
 
 RB-45 adds application identity mapping and server-side session foundations. See the

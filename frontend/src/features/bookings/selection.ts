@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { campusDayRange, toCampusInterval } from '@/shared/dates';
+import { campusDayRange, toBookingInterval } from '@/shared/dates';
 import type { SearchFilters } from '@/shared/api/types';
 
 const selectionSchema = z.object({
@@ -26,7 +26,7 @@ export function readBookingSelection(
     return { selection: null, error: 'Choose a room, date, time and group size before booking.' };
   }
   try {
-    toCampusInterval(parsed.data);
+    toBookingInterval(parsed.data);
     return { selection: parsed.data, error: null };
   } catch (error) {
     return {
