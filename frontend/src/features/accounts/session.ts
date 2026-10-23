@@ -15,5 +15,9 @@ export function safeReturnTo(value: string | null) {
     return '/';
   }
   const pathname = value.split('?')[0] ?? '';
-  return ['/', '/review', '/bookings'].includes(pathname) ? value : '/';
+  return ['/', '/review', '/bookings', '/account/mfa'].includes(pathname) ||
+    /^\/admin(?:\/[a-zA-Z0-9/-]*)?$/.test(pathname) ||
+    /^\/rooms\/[a-fA-F0-9-]+$/.test(pathname)
+    ? value
+    : '/';
 }

@@ -72,6 +72,6 @@ def test_populated_ownership_and_retry_history_cannot_be_discarded(
         with pytest.raises(DBAPIError, match="Refusing to discard booking"):
             command.downgrade(Config("alembic.ini"), "0004")
     with Session(db_engine) as session:
-        assert session.scalar(text("SELECT version_num FROM alembic_version")) == "0005"
+        assert session.scalar(text("SELECT version_num FROM alembic_version")) == "0006"
         assert session.scalars(select(BookingRequest)).one().booking_id == result.id
         assert inventory_legacy_bookings(session)["total"] == 0

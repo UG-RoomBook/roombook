@@ -3,6 +3,7 @@ from sqlalchemy import create_engine, pool
 from alembic import context
 from app.core.config import Settings
 from app.db.base import Base
+from app.modules.admin.models import AdminRequest  # noqa: F401
 from app.modules.availability.models import (  # noqa: F401
     Closure,
     DateException,

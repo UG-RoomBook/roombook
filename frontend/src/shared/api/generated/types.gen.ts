@@ -5,6 +5,156 @@ export type ClientOptions = {
 };
 
 /**
+ * Activity
+ */
+export type Activity = {
+    /**
+     * Action
+     */
+    action: string;
+    /**
+     * Actor Label
+     */
+    actor_label: string;
+    /**
+     * Actor User Id
+     */
+    actor_user_id: string | null;
+    /**
+     * Details
+     */
+    details: {
+        [key: string]: unknown;
+    };
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Occurred At
+     */
+    occurred_at: string;
+    /**
+     * Target Id
+     */
+    target_id: string | null;
+};
+
+/**
+ * AdminBooking
+ */
+export type AdminBooking = {
+    /**
+     * Cancelled At
+     */
+    cancelled_at: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Ends At
+     */
+    ends_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Owner Id
+     */
+    owner_id: string | null;
+    /**
+     * Owner Label
+     */
+    owner_label: string;
+    /**
+     * Room Id
+     */
+    room_id: string;
+    /**
+     * Room Name
+     */
+    room_name: string;
+    /**
+     * Starts At
+     */
+    starts_at: string;
+    /**
+     * Status
+     */
+    status: 'Upcoming' | 'Ongoing' | 'Completed' | 'Cancelled';
+};
+
+/**
+ * AdminRoom
+ */
+export type AdminRoom = {
+    /**
+     * Active
+     */
+    active: boolean;
+    /**
+     * Capacity
+     */
+    capacity: number;
+    /**
+     * Hours Confirmed
+     */
+    hours_confirmed: boolean;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Location
+     */
+    location: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Revision
+     */
+    revision: number;
+};
+
+/**
+ * AdminUser
+ */
+export type AdminUser = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Email Checked At
+     */
+    email_checked_at: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Is Active
+     */
+    is_active: boolean;
+    /**
+     * Revision
+     */
+    revision: number;
+    /**
+     * Role
+     */
+    role: 'Member' | 'Admin';
+    /**
+     * Verified Email
+     */
+    verified_email: string | null;
+};
+
+/**
  * Body_confirmAccountEmail
  */
 export type BodyConfirmAccountEmail = {
@@ -75,6 +225,50 @@ export type BookingCreated = {
 };
 
 /**
+ * BookingPage
+ */
+export type BookingPage = {
+    /**
+     * Generated At
+     */
+    generated_at: string;
+    /**
+     * Items
+     */
+    items: Array<AdminBooking>;
+    /**
+     * Limit
+     */
+    limit: number;
+    /**
+     * Offset
+     */
+    offset: number;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * ClosureInput
+ */
+export type ClosureInput = {
+    /**
+     * Ends At
+     */
+    ends_at: string;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Starts At
+     */
+    starts_at: string;
+};
+
+/**
  * EmailInput
  */
 export type EmailInput = {
@@ -82,6 +276,34 @@ export type EmailInput = {
      * Email
      */
     email: string;
+};
+
+/**
+ * EnrollInput
+ */
+export type EnrollInput = {
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * Enrollment
+ */
+export type Enrollment = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Qr Code
+     */
+    qr_code: string;
+    /**
+     * Secret
+     */
+    secret: string;
 };
 
 /**
@@ -114,6 +336,52 @@ export type ErrorResponse = {
 };
 
 /**
+ * ExceptionInput
+ */
+export type ExceptionInput = {
+    /**
+     * Date
+     */
+    date: string;
+    /**
+     * Windows
+     */
+    windows: Array<HoursInput>;
+};
+
+/**
+ * Factor
+ */
+export type Factor = {
+    /**
+     * Factor Type
+     */
+    factor_type: 'totp';
+    /**
+     * Friendly Name
+     */
+    friendly_name?: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Status
+     */
+    status: 'verified' | 'unverified';
+};
+
+/**
+ * Factors
+ */
+export type Factors = {
+    /**
+     * Factors
+     */
+    factors: Array<Factor>;
+};
+
+/**
  * HTTPValidationError
  */
 export type HttpValidationError = {
@@ -131,6 +399,42 @@ export type HealthResponse = {
      * Status
      */
     status?: 'healthy';
+};
+
+/**
+ * HoursInput
+ */
+export type HoursInput = {
+    /**
+     * End Minute
+     */
+    end_minute: number;
+    /**
+     * Start Minute
+     */
+    start_minute: number;
+};
+
+/**
+ * Impact
+ */
+export type Impact = {
+    /**
+     * Affected Bookings
+     */
+    affected_bookings: Array<AdminBooking>;
+    /**
+     * Affected Count
+     */
+    affected_count: number;
+    /**
+     * Generated At
+     */
+    generated_at: string;
+    /**
+     * Revision
+     */
+    revision: number;
 };
 
 /**
@@ -158,6 +462,110 @@ export type MessageResponse = {
 };
 
 /**
+ * Overview
+ */
+export type Overview = {
+    /**
+     * Active Rooms
+     */
+    active_rooms: number;
+    /**
+     * Active Users
+     */
+    active_users: number;
+    /**
+     * Agenda
+     */
+    agenda: Array<AdminBooking>;
+    /**
+     * Bookings Today
+     */
+    bookings_today: number;
+    /**
+     * Generated At
+     */
+    generated_at: string;
+    /**
+     * Recent Activity
+     */
+    recent_activity: Array<Activity>;
+    /**
+     * Timezone
+     */
+    timezone?: 'Australia/Melbourne';
+    /**
+     * Unconfirmed Rooms
+     */
+    unconfirmed_rooms: number;
+};
+
+/**
+ * Page[Activity]
+ */
+export type PageActivity = {
+    /**
+     * Items
+     */
+    items: Array<Activity>;
+    /**
+     * Limit
+     */
+    limit: number;
+    /**
+     * Offset
+     */
+    offset: number;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * Page[AdminRoom]
+ */
+export type PageAdminRoom = {
+    /**
+     * Items
+     */
+    items: Array<AdminRoom>;
+    /**
+     * Limit
+     */
+    limit: number;
+    /**
+     * Offset
+     */
+    offset: number;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * Page[AdminUser]
+ */
+export type PageAdminUser = {
+    /**
+     * Items
+     */
+    items: Array<AdminUser>;
+    /**
+     * Limit
+     */
+    limit: number;
+    /**
+     * Offset
+     */
+    offset: number;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
  * PasswordInput
  */
 export type PasswordInput = {
@@ -175,6 +583,16 @@ export type ReadinessResponse = {
      * Status
      */
     status?: 'ready';
+};
+
+/**
+ * ReasonInput
+ */
+export type ReasonInput = {
+    /**
+     * Reason
+     */
+    reason: string;
 };
 
 /**
@@ -229,6 +647,28 @@ export type RoomAvailability = {
      * Name
      */
     name: string;
+};
+
+/**
+ * RoomCreate
+ */
+export type RoomCreate = {
+    /**
+     * Capacity
+     */
+    capacity: number;
+    /**
+     * Location
+     */
+    location: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Reason
+     */
+    reason: string;
 };
 
 /**
@@ -347,6 +787,40 @@ export type RoomStartChoice = {
 };
 
 /**
+ * RoomUpdate
+ */
+export type RoomUpdate = {
+    /**
+     * Active
+     */
+    active: boolean;
+    /**
+     * Capacity
+     */
+    capacity: number;
+    /**
+     * Kind
+     */
+    kind?: 'room';
+    /**
+     * Location
+     */
+    location: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Revision
+     */
+    revision: number;
+};
+
+/**
  * RuntimeVersion
  */
 export type RuntimeVersion = {
@@ -362,6 +836,74 @@ export type RuntimeVersion = {
      * Version
      */
     version: string;
+};
+
+/**
+ * ScheduleRead
+ */
+export type ScheduleRead = {
+    /**
+     * Closures
+     */
+    closures: Array<ClosureInput>;
+    /**
+     * Exceptions
+     */
+    exceptions: Array<ExceptionInput>;
+    /**
+     * Hours Confirmed
+     */
+    hours_confirmed: boolean;
+    /**
+     * Revision
+     */
+    revision: number;
+    /**
+     * Room Id
+     */
+    room_id: string;
+    /**
+     * Timezone
+     */
+    timezone?: 'Australia/Melbourne';
+    /**
+     * Weekly
+     */
+    weekly: Array<WeeklyInput>;
+};
+
+/**
+ * ScheduleUpdate
+ */
+export type ScheduleUpdate = {
+    /**
+     * Closures
+     */
+    closures: Array<ClosureInput>;
+    /**
+     * Exceptions
+     */
+    exceptions: Array<ExceptionInput>;
+    /**
+     * Hours Confirmed
+     */
+    hours_confirmed: boolean;
+    /**
+     * Kind
+     */
+    kind?: 'schedule';
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Revision
+     */
+    revision: number;
+    /**
+     * Weekly
+     */
+    weekly: Array<WeeklyInput>;
 };
 
 /**
@@ -381,6 +923,10 @@ export type SessionResponse = {
      */
     expires_at: string;
     /**
+     * Mfa Verified At
+     */
+    mfa_verified_at?: string | null;
+    /**
      * Purpose
      */
     purpose?: 'standard';
@@ -395,6 +941,28 @@ export type SessionUser = {
      * Id
      */
     id: string;
+    /**
+     * Role
+     */
+    role: 'Member' | 'Admin';
+};
+
+/**
+ * UserUpdate
+ */
+export type UserUpdate = {
+    /**
+     * Is Active
+     */
+    is_active: boolean;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Revision
+     */
+    revision: number;
     /**
      * Role
      */
@@ -446,6 +1014,1057 @@ export type ValidationError = {
      */
     type: string;
 };
+
+/**
+ * VerifyInput
+ */
+export type VerifyInput = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Factor Id
+     */
+    factor_id: string;
+};
+
+/**
+ * WeeklyInput
+ */
+export type WeeklyInput = {
+    /**
+     * End Minute
+     */
+    end_minute: number;
+    /**
+     * Start Minute
+     */
+    start_minute: number;
+    /**
+     * Weekday
+     */
+    weekday: number;
+};
+
+export type AdminActivityData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Action
+         */
+        action?: string;
+        /**
+         * Target
+         */
+        target?: string | null;
+        /**
+         * Actor
+         */
+        actor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+    };
+    url: '/api/v1/admin/activity';
+};
+
+export type AdminActivityErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type AdminActivityError = AdminActivityErrors[keyof AdminActivityErrors];
+
+export type AdminActivityResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageActivity;
+};
+
+export type AdminActivityResponse = AdminActivityResponses[keyof AdminActivityResponses];
+
+export type AdminBookingsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Status
+         */
+        status?: 'all' | 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+        /**
+         * Room Id
+         */
+        room_id?: string | null;
+        /**
+         * Search
+         */
+        search?: string;
+        /**
+         * Day
+         */
+        day?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+    };
+    url: '/api/v1/admin/bookings';
+};
+
+export type AdminBookingsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type AdminBookingsError = AdminBookingsErrors[keyof AdminBookingsErrors];
+
+export type AdminBookingsResponses = {
+    /**
+     * Successful Response
+     */
+    200: BookingPage;
+};
+
+export type AdminBookingsResponse = AdminBookingsResponses[keyof AdminBookingsResponses];
+
+export type AdminBookingData = {
+    body?: never;
+    path: {
+        /**
+         * Booking Id
+         */
+        booking_id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/bookings/{booking_id}';
+};
+
+export type AdminBookingErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type AdminBookingError = AdminBookingErrors[keyof AdminBookingErrors];
+
+export type AdminBookingResponses = {
+    /**
+     * Successful Response
+     */
+    200: AdminBooking;
+};
+
+export type AdminBookingResponse = AdminBookingResponses[keyof AdminBookingResponses];
+
+export type AdminCancelBookingData = {
+    body: ReasonInput;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Origin
+         *
+         * Exact configured RoomBook application origin.
+         */
+        Origin?: string | null;
+        /**
+         * X-Csrf-Token
+         *
+         * CSRF value from the current session.
+         */
+        'X-CSRF-Token'?: string | null;
+    };
+    path: {
+        /**
+         * Booking Id
+         */
+        booking_id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/bookings/{booking_id}/cancel';
+};
+
+export type AdminCancelBookingErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type AdminCancelBookingError = AdminCancelBookingErrors[keyof AdminCancelBookingErrors];
+
+export type AdminCancelBookingResponses = {
+    /**
+     * Successful Response
+     */
+    200: AdminBooking;
+};
+
+export type AdminCancelBookingResponse = AdminCancelBookingResponses[keyof AdminCancelBookingResponses];
+
+export type AdminOverviewData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/overview';
+};
+
+export type AdminOverviewErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type AdminOverviewError = AdminOverviewErrors[keyof AdminOverviewErrors];
+
+export type AdminOverviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: Overview;
+};
+
+export type AdminOverviewResponse = AdminOverviewResponses[keyof AdminOverviewResponses];
+
+export type AdminRoomsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Search
+         */
+        search?: string;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+    };
+    url: '/api/v1/admin/rooms';
+};
+
+export type AdminRoomsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type AdminRoomsError = AdminRoomsErrors[keyof AdminRoomsErrors];
+
+export type AdminRoomsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageAdminRoom;
+};
+
+export type AdminRoomsResponse = AdminRoomsResponses[keyof AdminRoomsResponses];
+
+export type AdminCreateRoomData = {
+    body: RoomCreate;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Origin
+         *
+         * Exact configured RoomBook application origin.
+         */
+        Origin?: string | null;
+        /**
+         * X-Csrf-Token
+         *
+         * CSRF value from the current session.
+         */
+        'X-CSRF-Token'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/rooms';
+};
+
+export type AdminCreateRoomErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type AdminCreateRoomError = AdminCreateRoomErrors[keyof AdminCreateRoomErrors];
+
+export type AdminCreateRoomResponses = {
+    /**
+     * Successful Response
+     */
+    201: AdminRoom;
+};
+
+export type AdminCreateRoomResponse = AdminCreateRoomResponses[keyof AdminCreateRoomResponses];
+
+export type AdminRoomData = {
+    body?: never;
+    path: {
+        /**
+         * Room Id
+         */
+        room_id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/rooms/{room_id}';
+};
+
+export type AdminRoomErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type AdminRoomError = AdminRoomErrors[keyof AdminRoomErrors];
+
+export type AdminRoomResponses = {
+    /**
+     * Successful Response
+     */
+    200: AdminRoom;
+};
+
+export type AdminRoomResponse = AdminRoomResponses[keyof AdminRoomResponses];
+
+export type AdminUpdateRoomData = {
+    body: RoomUpdate;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Origin
+         *
+         * Exact configured RoomBook application origin.
+         */
+        Origin?: string | null;
+        /**
+         * X-Csrf-Token
+         *
+         * CSRF value from the current session.
+         */
+        'X-CSRF-Token'?: string | null;
+    };
+    path: {
+        /**
+         * Room Id
+         */
+        room_id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/rooms/{room_id}';
+};
+
+export type AdminUpdateRoomErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type AdminUpdateRoomError = AdminUpdateRoomErrors[keyof AdminUpdateRoomErrors];
+
+export type AdminUpdateRoomResponses = {
+    /**
+     * Successful Response
+     */
+    200: AdminRoom;
+};
+
+export type AdminUpdateRoomResponse = AdminUpdateRoomResponses[keyof AdminUpdateRoomResponses];
+
+export type AdminRoomImpactData = {
+    /**
+     * Body
+     */
+    body: RoomUpdate | ScheduleUpdate;
+    headers?: {
+        /**
+         * Origin
+         *
+         * Exact configured RoomBook application origin.
+         */
+        Origin?: string | null;
+        /**
+         * X-Csrf-Token
+         *
+         * CSRF value from the current session.
+         */
+        'X-CSRF-Token'?: string | null;
+    };
+    path: {
+        /**
+         * Room Id
+         */
+        room_id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/rooms/{room_id}/impact';
+};
+
+export type AdminRoomImpactErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type AdminRoomImpactError = AdminRoomImpactErrors[keyof AdminRoomImpactErrors];
+
+export type AdminRoomImpactResponses = {
+    /**
+     * Successful Response
+     */
+    200: Impact;
+};
+
+export type AdminRoomImpactResponse = AdminRoomImpactResponses[keyof AdminRoomImpactResponses];
+
+export type AdminScheduleData = {
+    body?: never;
+    path: {
+        /**
+         * Room Id
+         */
+        room_id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/rooms/{room_id}/schedule';
+};
+
+export type AdminScheduleErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type AdminScheduleError = AdminScheduleErrors[keyof AdminScheduleErrors];
+
+export type AdminScheduleResponses = {
+    /**
+     * Successful Response
+     */
+    200: ScheduleRead;
+};
+
+export type AdminScheduleResponse = AdminScheduleResponses[keyof AdminScheduleResponses];
+
+export type AdminUpdateScheduleData = {
+    body: ScheduleUpdate;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Origin
+         *
+         * Exact configured RoomBook application origin.
+         */
+        Origin?: string | null;
+        /**
+         * X-Csrf-Token
+         *
+         * CSRF value from the current session.
+         */
+        'X-CSRF-Token'?: string | null;
+    };
+    path: {
+        /**
+         * Room Id
+         */
+        room_id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/rooms/{room_id}/schedule';
+};
+
+export type AdminUpdateScheduleErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type AdminUpdateScheduleError = AdminUpdateScheduleErrors[keyof AdminUpdateScheduleErrors];
+
+export type AdminUpdateScheduleResponses = {
+    /**
+     * Successful Response
+     */
+    200: ScheduleRead;
+};
+
+export type AdminUpdateScheduleResponse = AdminUpdateScheduleResponses[keyof AdminUpdateScheduleResponses];
+
+export type AdminUsersData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Search
+         */
+        search?: string;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+    };
+    url: '/api/v1/admin/users';
+};
+
+export type AdminUsersErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type AdminUsersError = AdminUsersErrors[keyof AdminUsersErrors];
+
+export type AdminUsersResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageAdminUser;
+};
+
+export type AdminUsersResponse = AdminUsersResponses[keyof AdminUsersResponses];
+
+export type AdminUserData = {
+    body?: never;
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/users/{user_id}';
+};
+
+export type AdminUserErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type AdminUserError = AdminUserErrors[keyof AdminUserErrors];
+
+export type AdminUserResponses = {
+    /**
+     * Successful Response
+     */
+    200: AdminUser;
+};
+
+export type AdminUserResponse = AdminUserResponses[keyof AdminUserResponses];
+
+export type AdminUpdateUserData = {
+    body: UserUpdate;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Origin
+         *
+         * Exact configured RoomBook application origin.
+         */
+        Origin?: string | null;
+        /**
+         * X-Csrf-Token
+         *
+         * CSRF value from the current session.
+         */
+        'X-CSRF-Token'?: string | null;
+    };
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/users/{user_id}';
+};
+
+export type AdminUpdateUserErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type AdminUpdateUserError = AdminUpdateUserErrors[keyof AdminUpdateUserErrors];
+
+export type AdminUpdateUserResponses = {
+    /**
+     * Successful Response
+     */
+    200: AdminUser;
+};
+
+export type AdminUpdateUserResponse = AdminUpdateUserResponses[keyof AdminUpdateUserResponses];
 
 export type ChangeAccountEmailData = {
     body: EmailInput;
@@ -693,6 +2312,223 @@ export type LogoutCurrentSessionResponses = {
 };
 
 export type LogoutCurrentSessionResponse = LogoutCurrentSessionResponses[keyof LogoutCurrentSessionResponses];
+
+export type ListMfaFactorsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/mfa';
+};
+
+export type ListMfaFactorsErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type ListMfaFactorsError = ListMfaFactorsErrors[keyof ListMfaFactorsErrors];
+
+export type ListMfaFactorsResponses = {
+    /**
+     * Successful Response
+     */
+    200: Factors;
+};
+
+export type ListMfaFactorsResponse = ListMfaFactorsResponses[keyof ListMfaFactorsResponses];
+
+export type EnrollMfaFactorData = {
+    body: EnrollInput;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/mfa/enroll';
+};
+
+export type EnrollMfaFactorErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type EnrollMfaFactorError = EnrollMfaFactorErrors[keyof EnrollMfaFactorErrors];
+
+export type EnrollMfaFactorResponses = {
+    /**
+     * Successful Response
+     */
+    200: Enrollment;
+};
+
+export type EnrollMfaFactorResponse = EnrollMfaFactorResponses[keyof EnrollMfaFactorResponses];
+
+export type VerifyMfaFactorData = {
+    body: VerifyInput;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/mfa/verify';
+};
+
+export type VerifyMfaFactorErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type VerifyMfaFactorError = VerifyMfaFactorErrors[keyof VerifyMfaFactorErrors];
+
+export type VerifyMfaFactorResponses = {
+    /**
+     * Successful Response
+     */
+    200: SessionResponse;
+};
+
+export type VerifyMfaFactorResponse = VerifyMfaFactorResponses[keyof VerifyMfaFactorResponses];
+
+export type RemoveMfaFactorData = {
+    body: ReasonInput;
+    path: {
+        /**
+         * Factor Id
+         */
+        factor_id: string;
+    };
+    query?: never;
+    url: '/api/v1/auth/mfa/{factor_id}/remove';
+};
+
+export type RemoveMfaFactorErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Too Many Requests
+     */
+    429: ErrorResponse;
+    /**
+     * Unexpected error
+     */
+    500: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type RemoveMfaFactorError = RemoveMfaFactorErrors[keyof RemoveMfaFactorErrors];
+
+export type RemoveMfaFactorResponses = {
+    /**
+     * Successful Response
+     */
+    200: MessageResponse;
+};
+
+export type RemoveMfaFactorResponse = RemoveMfaFactorResponses[keyof RemoveMfaFactorResponses];
 
 export type RequestAccountRecoveryData = {
     body: EmailInput;

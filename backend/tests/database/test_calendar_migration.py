@@ -85,7 +85,7 @@ def test_populated_calendars_refuse_destructive_downgrade(
         with pytest.raises(DBAPIError, match="Refusing to discard"):
             command.downgrade(Config("alembic.ini"), "0003")
     with Session(db_engine) as session:
-        assert inventory(session)["revision"] == "0005"
+        assert inventory(session)["revision"] == "0006"
         assert len(session.scalars(select(WeeklyHours)).all()) == 7
 
 

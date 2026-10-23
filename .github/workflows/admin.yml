@@ -1,0 +1,82 @@
+name: Admin workspace browser checks
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "tests/e2e/**"
+      - ".github/workflows/admin.yml"
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  admin-workspace:
+    name: Admin permissions, MFA and management journeys
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
+        env:
+          POSTGRES_USER: roombook
+          POSTGRES_PASSWORD: roombook
+          POSTGRES_DB: roombook_admin_e2e_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U roombook -d roombook_admin_e2e_test"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      ROOMBOOK_DATABASE_URL: postgresql+psycopg://roombook:roombook@127.0.0.1:5432/roombook_admin_e2e_test
+      ROOMBOOK_E2E_DATABASE_URL: postgresql+psycopg://roombook:roombook@127.0.0.1:5432/roombook_admin_e2e_test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          working-directory: backend
+          enable-cache: true
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: frontend/.node-version
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            tests/e2e/package-lock.json
+      - name: Build the real frontend and install browser tests
+        run: |
+          npm install --global npm@11.6.2
+          npm --prefix frontend ci --no-audit --no-fund
+          npm --prefix frontend run build
+          npm --prefix tests/e2e ci --no-audit --no-fund
+          cd tests/e2e
+          npx playwright install --with-deps chromium
+      - name: Prepare isolated PostgreSQL fixture
+        working-directory: backend
+        run: |
+          uv sync --locked
+          uv run --locked alembic upgrade head
+      - name: Exercise admin sessions, MFA and management transactions
+        run: |
+          mkdir -p tests/e2e/results
+          (cd backend && uv run --locked uvicorn tests.admin_e2e_server:app --host 127.0.0.1 --port 8012) > tests/e2e/results/fixture-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for _attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8012/ready > /dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8012/ready > /dev/null
+          BASE_URL=http://127.0.0.1:8012 ROOMBOOK_ADMIN_FIXTURE=1 npm --prefix tests/e2e test -- --workers=1 specs/admin.spec.ts
+      - name: Keep browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: admin-workspace-browser-reports
+          path: tests/e2e/results/
+          if-no-files-found: ignore
+          retention-days: 14

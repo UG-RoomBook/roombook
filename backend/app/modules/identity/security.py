@@ -21,6 +21,8 @@ def is_private_path(path: str) -> bool:
     decoded = unquote(path.split("?", 1)[0])
     return (
         is_identity_path(path)
+        or decoded == "/api/v1/admin"
+        or decoded.startswith("/api/v1/admin/")
         or decoded == "/api/v1/bookings"
         or decoded.startswith("/api/v1/bookings/")
     )

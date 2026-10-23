@@ -187,6 +187,34 @@ class SupabaseProvider:
             invalid_statuses=(400, 401, 403, 404, 422),
         )
 
+    def mfa_request(
+        self,
+        method: str,
+        operation: str,
+        access: str,
+        payload: dict[str, str] | None = None,
+        factor_id: UUID | None = None,
+    ) -> dict[str, object]:
+        paths = {("GET", "list"): "/user", ("POST", "enroll"): "/factors"}
+        if factor_id is not None:
+            paths.update(
+                {
+                    ("POST", "challenge"): f"/factors/{factor_id}/challenge",
+                    ("POST", "verify"): f"/factors/{factor_id}/verify",
+                    ("DELETE", "remove"): f"/factors/{factor_id}",
+                }
+            )
+        path = paths.get((method, operation))
+        if path is None:
+            raise ValueError("Unsupported MFA operation.")
+        return self._request_json(
+            method,
+            path,
+            authorization=access,
+            payload=payload,
+            invalid_statuses=(400, 401, 403, 404, 422, 429),
+        )
+
     def _identity(self, claims: dict[str, object]) -> VerifiedIdentity:
         subject = claims["sub"]
         session_id = claims["session_id"]
@@ -209,6 +237,19 @@ class SupabaseProvider:
             raise InvalidIdentity()
         if UUID(subject).int == 0 or UUID(session_id).int == 0 or exp <= issued:
             raise InvalidIdentity()
+        mfa_at = None
+        amr = claims.get("amr", [])
+        if claims["aal"] == "aal2" and isinstance(amr, list):
+            times = [
+                entry["timestamp"]
+                for entry in amr
+                if isinstance(entry, dict)
+                and entry.get("method") == "totp"
+                and type(entry.get("timestamp")) is int
+                and 0 < entry["timestamp"] <= issued
+            ]
+            if times:
+                mfa_at = datetime.fromtimestamp(max(times), UTC)
         return VerifiedIdentity(
             issuer=self._issuer,
             subject=subject,
@@ -217,6 +258,7 @@ class SupabaseProvider:
             email_verified=False,
             aal=str(claims["aal"]),
             expires_at=datetime.fromtimestamp(exp, UTC),
+            mfa_verified_at=mfa_at,
         )
 
     def _signing_key(self, kid: str) -> jwt.PyJWK:

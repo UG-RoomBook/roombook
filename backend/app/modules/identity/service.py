@@ -70,6 +70,7 @@ class SessionResult:
     expires_at: datetime
     csrf_token: str = field(repr=False)
     opaque_token: str = field(repr=False)
+    mfa_verified_at: datetime | None = None
 
 
 _DEFAULT_POLICY = SessionPolicy()
@@ -161,6 +162,7 @@ class SessionService:
         *,
         previous_token: str | None = None,
         purpose: str = "standard",
+        mfa_user: UUID | None = None,
     ) -> SessionResult:
         """Internal entry point after credentials/OTP; never accepts browser provider tokens."""
         if purpose not in {"standard", "recovery"}:
@@ -170,6 +172,12 @@ class SessionService:
         self._check_identity(verified, identity)
         now = self._now()
         if not identity.email_verified or identity.expires_at <= now:
+            raise InvalidIdentity()
+        if mfa_user is not None and (
+            identity.aal != "aal2"
+            or identity.mfa_verified_at is None
+            or not now - timedelta(minutes=10) <= identity.mfa_verified_at <= now
+        ):
             raise InvalidIdentity()
         opaque_token = secrets.token_urlsafe(32)
         token_hash = hash_token(opaque_token)
@@ -234,15 +242,27 @@ class SessionService:
             user = next(item for item in locked_users if item.id == external.user_id)
             if not user.is_active:
                 raise self._inactive()
+            user.verified_email = identity.email
+            user.email_checked_at = now
             now = self._now()
             if identity.expires_at <= now:
                 raise InvalidIdentity()
+            if mfa_user is not None and (user.id != mfa_user or previous_hash is None):
+                raise InvalidSession()
             if previous_hash is not None:
                 previous = db.scalar(
                     select(AuthSession)
                     .where(AuthSession.token_hash == previous_hash)
                     .with_for_update()
                 )
+                if mfa_user is not None:
+                    if (
+                        previous is None
+                        or previous.user_id != user.id
+                        or previous.purpose != "standard"
+                    ):
+                        raise InvalidSession()
+                    self._live(previous, user.is_active, now)
                 if previous is not None and previous.revoked_at is None:
                     self._revoke_record(db, previous, now, "reauthentication")
             record = AuthSession(
@@ -254,6 +274,7 @@ class SessionService:
                 refresh_token_ciphertext=refresh_ciphertext,
                 provider_session_id=identity.session_id,
                 aal=identity.aal,
+                mfa_verified_at=identity.mfa_verified_at,
                 purpose=purpose,
                 created_at=now,
                 last_seen_at=now,
@@ -261,6 +282,13 @@ class SessionService:
                 access_expires_at=identity.expires_at,
                 last_provider_check_at=now,
             )
+            if mfa_user is not None:
+                db.execute(
+                    update(AuthSession)
+                    .where(AuthSession.user_id == user.id, AuthSession.revoked_at.is_(None))
+                    .values(revoked_at=now, refresh_owner=None, refresh_until=None)
+                )
+                self._audit(db, user.id, user.id, "mfa.verified", now)
             db.add(record)
             self._audit(db, user.id, record.id, "session.established", now, purpose=purpose)
             result = self._result(record, user, opaque_token, now)
@@ -296,6 +324,7 @@ class SessionService:
             ),
             csrf_token=self.cipher.csrf_token(opaque_token),
             opaque_token=opaque_token,
+            mfa_verified_at=record.mfa_verified_at,
         )
 
     def _read(self, token_hash: str) -> _Snapshot:
@@ -559,6 +588,8 @@ class SessionService:
                 record.refresh_token_ciphertext = refresh_ciphertext
                 record.access_expires_at = identity.expires_at
                 record.last_provider_check_at = now
+                user.verified_email = identity.email
+                user.email_checked_at = now
                 record.last_seen_at = max(record.last_seen_at, now)
                 record.refresh_owner = None
                 record.refresh_until = None

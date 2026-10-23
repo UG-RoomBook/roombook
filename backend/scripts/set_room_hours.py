@@ -107,6 +107,7 @@ def set_weekly_hours(
             for day, start, end in wanted
         )
         guard.room.hours_confirmed = True
+        guard.room.revision += 1
         # locked_room's exit check rejects the change if it strands a booking.
     return True
 

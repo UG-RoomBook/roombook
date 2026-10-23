@@ -52,9 +52,13 @@ jobs:
     name: Room booking browser checks
     uses: ./.github/workflows/room-booking.yml
 
+  admin-workspace-checks:
+    name: Admin workspace browser checks
+    uses: ./.github/workflows/admin.yml
+
   build:
     name: Build, scan and publish image (CI server)
-    needs: [backend-checks, frontend-checks, room-booking-checks]
+    needs: [backend-checks, frontend-checks, room-booking-checks, admin-workspace-checks]
     runs-on: ${{ vars.RUNNER_MODE == 'hosted' && 'ubuntu-24.04' || 'ci' }}
     timeout-minutes: 30
     permissions:

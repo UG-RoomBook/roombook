@@ -8,9 +8,11 @@ from app.core.errors import ErrorResponse, install_error_handlers
 from app.core.frontend import install_frontend
 from app.core.metrics import install_metrics
 from app.db.session import Database
+from app.modules.admin.router import router as admin_router
 from app.modules.bookings.router import router as bookings_router
 from app.modules.identity.account_router import router as account_router
 from app.modules.identity.crypto import TokenCipher
+from app.modules.identity.mfa import router as mfa_router
 from app.modules.identity.provider import SupabaseProvider
 from app.modules.identity.router import router as identity_router
 from app.modules.identity.security import install_identity_http_policy
@@ -75,6 +77,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.include_router(identity_router)
     application.include_router(account_router)
     application.include_router(bookings_router)
+    application.include_router(admin_router)
+    application.include_router(mfa_router)
     # Must stay last: the React fallback only handles paths no API route matched.
     install_frontend(application, configured.static_dir)
     return application
