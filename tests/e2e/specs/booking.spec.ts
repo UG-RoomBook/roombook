@@ -1,10 +1,11 @@
-import { expect, type Page, test } from '@playwright/test';
+import { type APIRequestContext, expect, test } from '@playwright/test';
 
-// Core visitor journeys for booking, against the real system. Rooms only open
-// within confirmed hours (RB-51); the pipeline confirms Monday–Friday
-// 09:00–17:00 for the reference rooms with scripts.set_room_hours before these
-// run. Confirming a booking needs a verified account, so these journeys stop
-// at the sign-in boundary and prove nothing can be booked without a session.
+// Core visitor journeys for booking, against the real system on the Test
+// server and on Staging. Rooms open only within confirmed hours (RB-51); the
+// pipeline confirms Monday–Friday 09:00–17:00 for the reference rooms with
+// scripts.set_room_hours before these run. Confirming a booking needs a
+// verified account, so these stop at the sign-in boundary; the signed-in
+// journey is covered by room-booking.spec.ts against its isolated fixture.
 const environment = process.env.EXPECTED_ENVIRONMENT ?? '';
 
 /** A date (YYYY-MM-DD) `from` days ahead that falls on one of `weekdays` (0 = Sunday). */
@@ -18,41 +19,59 @@ function dayAhead(from: number, weekdays: number[]): string {
 const weekday = () => dayAhead(7, [1, 2, 3, 4, 5]);
 const saturday = () => dayAhead(2, [6]);
 
-async function search(page: Page, date: string, from: string, until: string) {
-  await page.goto('/');
-  const form = page.getByRole('form', { name: 'Room search' });
-  await form.getByLabel('Date').fill(date);
-  await form.getByLabel('From').fill(from);
-  await form.getByRole('combobox', { name: 'Until' }).selectOption(until);
-  await form.getByLabel('People').selectOption({ label: 'Any size' });
-  await form.getByRole('button', { name: 'Find rooms' }).click();
-  await expect(page.getByRole('heading', { level: 2, name: /Available rooms/ })).toBeVisible();
+/** Melbourne wall-clock time on `date` as an ISO instant with its real offset (AEST or AEDT). */
+function melbourne(date: string, time: string): string {
+  const noon = new Date(`${date}T12:00:00Z`);
+  const name = new Intl.DateTimeFormat('en-AU', {
+    timeZone: 'Australia/Melbourne',
+    timeZoneName: 'longOffset',
+  })
+    .formatToParts(noon)
+    .find((part) => part.type === 'timeZoneName')?.value;
+  const offset = name?.replace('GMT', '') || '+10:00';
+  return `${date}T${time}:00${offset}`;
 }
 
-test('rooms are bookable within opening hours and closed outside them', async ({ page }) => {
-  await search(page, weekday(), '10:00', '11:00');
-  await expect(page.locator('.sw-count')).toHaveText(/^[1-9]\d* of \d+ available/);
-  await expect(page.getByRole('button', { name: /^Book / }).first()).toBeEnabled();
+async function availability(request: APIRequestContext, date: string, start: string, end: string) {
+  const response = await request.get('/api/v1/rooms', {
+    params: { starts_at: melbourne(date, start), ends_at: melbourne(date, end) },
+  });
+  expect(response.ok()).toBeTruthy();
+  return ((await response.json()).items as { available?: boolean }[]).map((room) => room.available);
+}
 
-  await search(page, saturday(), '10:00', '11:00');
-  await expect(page.locator('.sw-count')).toHaveText(/^0 of \d+ available/);
-  await expect(page.getByRole('button', { name: /^Book / })).toHaveCount(0);
+test('rooms are bookable within opening hours and closed outside them', async ({ request }) => {
+  const open = await availability(request, weekday(), '10:00', '11:00');
+  expect(open.some((available) => available === true)).toBeTruthy();
+
+  const closed = await availability(request, saturday(), '10:00', '11:00');
+  expect(closed.length).toBeGreaterThan(0);
+  expect(closed.every((available) => available === false)).toBeTruthy();
 });
 
 test('a visitor chooses a room and time and must sign in before confirming', async ({ page }) => {
   const date = weekday();
-  await search(page, date, '10:00', '11:00');
-  const book = page.getByRole('button', { name: /^Book / }).first();
-  const roomName = ((await book.getAttribute('aria-label')) ?? '').replace(/^Book /, '');
-  await book.click();
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Choose time for The Studio' }).click();
+  await page.getByLabel('Date', { exact: true }).fill(date);
+  await expect(page.getByText('Availability checked. Updates every 30 seconds.')).toBeVisible();
+
+  const start = page.locator('input[name="start"][value="10:00"]');
+  await expect(start).toBeEnabled();
+  await start.click();
+  await expect(start).toBeChecked();
+  const end = page.locator('input[name="end"][value="11:00"]');
+  await expect(end).toBeEnabled();
+  await end.click();
+  await expect(end).toBeChecked();
+  await page.getByRole('button', { name: 'Review booking' }).click();
 
   // The review keeps the exact room and interval the visitor chose.
-  await expect(page).toHaveURL(/\/review\?/);
-  await expect(page.getByRole('heading', { level: 1, name: 'Review booking' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Review booking', exact: true })).toBeVisible();
   const review = page.getByRole('form', { name: 'Confirm room booking' });
-  await expect(review.getByRole('heading', { level: 2, name: roomName })).toBeVisible();
+  await expect(review.getByRole('heading', { level: 2, name: 'The Studio' })).toBeVisible();
   await expect(review).toContainText('Melbourne');
-  await expect(page.getByRole('button', { name: 'Confirm booking' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Confirm booking', exact: true })).toHaveCount(0);
 
   // Without a session the only way forward is signing in; the selection is carried along.
   if (environment === 'staging') {
@@ -71,12 +90,13 @@ test('the booking API refuses a request without a signed-in session', async ({ r
   const rooms = await request.get('/api/v1/rooms');
   expect(rooms.ok()).toBeTruthy();
   const roomId = (await rooms.json()).items[0].id as string;
+  const date = weekday();
 
   const response = await request.post('/api/v1/bookings', {
     data: {
       room_id: roomId,
-      starts_at: `${weekday()}T10:00:00+11:00`,
-      ends_at: `${weekday()}T11:00:00+11:00`,
+      starts_at: melbourne(date, '10:00'),
+      ends_at: melbourne(date, '11:00'),
     },
     headers: { 'Idempotency-Key': crypto.randomUUID() },
   });
