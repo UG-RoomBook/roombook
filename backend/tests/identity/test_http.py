@@ -82,7 +82,7 @@ def test_session_response_has_only_local_user_and_safe_session_fields(
     response = client.get("/api/v1/auth/session", headers=cookie(TOKEN_A))
     assert response.status_code == 200
     body = response.json()
-    assert set(body) == {"user", "aal", "purpose", "expires_at", "csrf_token"}
+    assert set(body) == {"user", "aal", "purpose", "expires_at", "csrf_token", "mfa_verified_at"}
     assert body["purpose"] == "standard"
     assert body["user"] == {"id": str(service.results[TOKEN_A].user_id), "role": "Member"}
     assert body["csrf_token"] == cipher.csrf_token(TOKEN_A)

@@ -1,5 +1,5 @@
 import { CalendarDays, LayoutGrid } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { RoomBookingPage } from '@/features/rooms/RoomBookingPage';
 import { FindRoomPage } from '@/features/rooms/FindRoomPage';
@@ -7,7 +7,13 @@ import { ReviewBookingPage } from '@/features/bookings/ReviewBookingPage';
 import { BookingsPage } from '@/features/bookings/BookingsPage';
 import { AccountNavigation, AccountPage } from '@/features/accounts/AccountPage';
 import { useRuntimeVersion } from '@/shared/api/queries';
+import { AdminNavigation, AdminLink } from '@/features/admin/Admin';
+import { MfaPage } from '@/features/accounts/MfaPage';
 import { AppearanceControl } from './AppearanceControl';
+
+const AdminPage = lazy(() =>
+  import('@/features/admin/AdminPage').then((module) => ({ default: module.AdminPage })),
+);
 
 function RuntimeIdentity() {
   const version = useRuntimeVersion();
@@ -27,6 +33,7 @@ function RuntimeIdentity() {
 
 export function App() {
   const location = useLocation();
+  const isAdmin = location.pathname === '/admin' || location.pathname.startsWith('/admin/');
   const mainRef = useRef<HTMLElement>(null);
   const previousPath = useRef(location.pathname);
   const findActive =
@@ -46,7 +53,7 @@ export function App() {
       mainRef.current?.querySelector('h1')?.focus({ preventScroll: true });
       previousPath.current = location.pathname;
     }
-    document.title = `${location.pathname.startsWith('/account') ? 'Account' : location.pathname.startsWith('/bookings') ? 'Bookings' : location.pathname.startsWith('/review') ? 'Review booking' : location.pathname.startsWith('/rooms/') ? 'Choose time' : 'Find a room'} | RoomBook`;
+    document.title = `${location.pathname.startsWith('/admin') ? 'Administration' : location.pathname.startsWith('/account') ? 'Account' : location.pathname.startsWith('/bookings') ? 'Bookings' : location.pathname.startsWith('/review') ? 'Review booking' : location.pathname.startsWith('/rooms/') ? 'Choose time' : 'Find a room'} | RoomBook`;
   }, [location.pathname, location.search]);
 
   return (
@@ -54,7 +61,7 @@ export function App() {
       <a className="sw-skip-link" href="#main-content">
         Skip to content
       </a>
-      <div className="sw-shell">
+      <div className={`sw-shell${isAdmin ? ' ad-shell' : ''}`}>
         <aside className="sw-sidebar">
           <div className="sw-brand">
             <span className="sw-mark" aria-hidden="true">
@@ -62,27 +69,38 @@ export function App() {
             </span>
             RoomBook
           </div>
-          <nav className="sw-nav" aria-label="Main navigation">
-            <Link to={`/${lastSearch}`} aria-current={findActive ? 'page' : undefined}>
-              <LayoutGrid aria-hidden="true" />
-              Find a room
-            </Link>
-            <Link
-              to="/bookings"
-              aria-current={location.pathname === '/bookings' ? 'page' : undefined}
-            >
-              <CalendarDays aria-hidden="true" />
-              Bookings
-            </Link>
-            <AccountNavigation />
-          </nav>
+          {isAdmin ? (
+            <AdminNavigation />
+          ) : (
+            <nav className="sw-nav" aria-label="Main navigation">
+              <Link to={`/${lastSearch}`} aria-current={findActive ? 'page' : undefined}>
+                <LayoutGrid aria-hidden="true" />
+                Find a room
+              </Link>
+              <Link
+                to="/bookings"
+                aria-current={location.pathname === '/bookings' ? 'page' : undefined}
+              >
+                <CalendarDays aria-hidden="true" />
+                Bookings
+              </Link>
+              <AccountNavigation />
+              <AdminLink />
+            </nav>
+          )}
         </aside>
         <div className="sw-workspace">
           <header className="sw-top">
             <div className="sw-breadcrumb">
               <span>Campus</span>
               <span aria-hidden="true">/</span>
-              <strong>{location.pathname.startsWith('/account') ? 'Account' : 'Rooms'}</strong>
+              <strong>
+                {isAdmin
+                  ? 'Administration'
+                  : location.pathname.startsWith('/account')
+                    ? 'Account'
+                    : 'Rooms'}
+              </strong>
             </div>
             <AppearanceControl />
           </header>
@@ -93,6 +111,15 @@ export function App() {
                 <Route path="/rooms/:roomId" element={<RoomBookingPage />} />
                 <Route path="/review" element={<ReviewBookingPage />} />
                 <Route path="/bookings" element={<BookingsPage />} />
+                <Route
+                  path="/admin/*"
+                  element={
+                    <Suspense fallback={<p role="status">Loading admin workspace…</p>}>
+                      <AdminPage />
+                    </Suspense>
+                  }
+                />
+                <Route path="/account/mfa" element={<MfaPage />} />
                 <Route path="/account/*" element={<AccountPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

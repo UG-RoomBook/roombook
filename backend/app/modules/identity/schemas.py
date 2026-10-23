@@ -20,3 +20,4 @@ class SessionResponse(BaseModel):
     purpose: Literal["standard"] = "standard"
     expires_at: datetime
     csrf_token: str
+    mfa_verified_at: datetime | None = None

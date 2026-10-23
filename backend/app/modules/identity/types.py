@@ -24,6 +24,7 @@ class VerifiedIdentity:
     email_verified: bool
     aal: str
     expires_at: datetime
+    mfa_verified_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)

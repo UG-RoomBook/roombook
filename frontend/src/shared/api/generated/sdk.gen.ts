@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, type Options as Options2, type RequestResult, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { ChangeAccountEmailData, ChangeAccountEmailErrors, ChangeAccountEmailResponses, ConfirmAccountEmailData, ConfirmAccountEmailErrors, CreateBookingData, CreateBookingErrors, CreateBookingResponses, GetCurrentSessionData, GetCurrentSessionErrors, GetCurrentSessionResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetRecoverySessionData, GetRecoverySessionErrors, GetRecoverySessionResponses, GetRoomData, GetRoomDayAvailabilityData, GetRoomDayAvailabilityErrors, GetRoomDayAvailabilityResponses, GetRoomErrors, GetRoomResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ListRoomsData, ListRoomsErrors, ListRoomsResponses, LoginAccountData, LoginAccountErrors, LoginAccountResponses, LogoutCurrentSessionData, LogoutCurrentSessionErrors, LogoutCurrentSessionResponses, RegisterAccountData, RegisterAccountErrors, RegisterAccountResponses, RequestAccountRecoveryData, RequestAccountRecoveryErrors, RequestAccountRecoveryResponses, ResendAccountVerificationData, ResendAccountVerificationErrors, ResendAccountVerificationResponses, ResetAccountPasswordData, ResetAccountPasswordErrors, ResetAccountPasswordResponses, ShowAccountConfirmationData, ShowAccountConfirmationErrors, ShowAccountConfirmationResponses } from './types.gen';
+import type { AdminActivityData, AdminActivityErrors, AdminActivityResponses, AdminBookingData, AdminBookingErrors, AdminBookingResponses, AdminBookingsData, AdminBookingsErrors, AdminBookingsResponses, AdminCancelBookingData, AdminCancelBookingErrors, AdminCancelBookingResponses, AdminCreateRoomData, AdminCreateRoomErrors, AdminCreateRoomResponses, AdminOverviewData, AdminOverviewErrors, AdminOverviewResponses, AdminRoomData, AdminRoomErrors, AdminRoomImpactData, AdminRoomImpactErrors, AdminRoomImpactResponses, AdminRoomResponses, AdminRoomsData, AdminRoomsErrors, AdminRoomsResponses, AdminScheduleData, AdminScheduleErrors, AdminScheduleResponses, AdminUpdateRoomData, AdminUpdateRoomErrors, AdminUpdateRoomResponses, AdminUpdateScheduleData, AdminUpdateScheduleErrors, AdminUpdateScheduleResponses, AdminUpdateUserData, AdminUpdateUserErrors, AdminUpdateUserResponses, AdminUserData, AdminUserErrors, AdminUserResponses, AdminUsersData, AdminUsersErrors, AdminUsersResponses, ChangeAccountEmailData, ChangeAccountEmailErrors, ChangeAccountEmailResponses, ConfirmAccountEmailData, ConfirmAccountEmailErrors, CreateBookingData, CreateBookingErrors, CreateBookingResponses, EnrollMfaFactorData, EnrollMfaFactorErrors, EnrollMfaFactorResponses, GetCurrentSessionData, GetCurrentSessionErrors, GetCurrentSessionResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetRecoverySessionData, GetRecoverySessionErrors, GetRecoverySessionResponses, GetRoomData, GetRoomDayAvailabilityData, GetRoomDayAvailabilityErrors, GetRoomDayAvailabilityResponses, GetRoomErrors, GetRoomResponses, GetVersionData, GetVersionErrors, GetVersionResponses, ListMfaFactorsData, ListMfaFactorsErrors, ListMfaFactorsResponses, ListRoomsData, ListRoomsErrors, ListRoomsResponses, LoginAccountData, LoginAccountErrors, LoginAccountResponses, LogoutCurrentSessionData, LogoutCurrentSessionErrors, LogoutCurrentSessionResponses, RegisterAccountData, RegisterAccountErrors, RegisterAccountResponses, RemoveMfaFactorData, RemoveMfaFactorErrors, RemoveMfaFactorResponses, RequestAccountRecoveryData, RequestAccountRecoveryErrors, RequestAccountRecoveryResponses, ResendAccountVerificationData, ResendAccountVerificationErrors, ResendAccountVerificationResponses, ResetAccountPasswordData, ResetAccountPasswordErrors, ResetAccountPasswordResponses, ShowAccountConfirmationData, ShowAccountConfirmationErrors, ShowAccountConfirmationResponses, VerifyMfaFactorData, VerifyMfaFactorErrors, VerifyMfaFactorResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -17,6 +17,225 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+/**
+ * Activity
+ */
+export const adminActivity = <ThrowOnError extends boolean = false>(options?: Options<AdminActivityData, ThrowOnError>): RequestResult<AdminActivityResponses, AdminActivityErrors, ThrowOnError> => (options?.client ?? client).get<AdminActivityResponses, AdminActivityErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/admin/activity',
+    ...options
+});
+
+/**
+ * Bookings
+ */
+export const adminBookings = <ThrowOnError extends boolean = false>(options?: Options<AdminBookingsData, ThrowOnError>): RequestResult<AdminBookingsResponses, AdminBookingsErrors, ThrowOnError> => (options?.client ?? client).get<AdminBookingsResponses, AdminBookingsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/admin/bookings',
+    ...options
+});
+
+/**
+ * Booking
+ */
+export const adminBooking = <ThrowOnError extends boolean = false>(options: Options<AdminBookingData, ThrowOnError>): RequestResult<AdminBookingResponses, AdminBookingErrors, ThrowOnError> => (options.client ?? client).get<AdminBookingResponses, AdminBookingErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/admin/bookings/{booking_id}',
+    ...options
+});
+
+/**
+ * Cancel
+ */
+export const adminCancelBooking = <ThrowOnError extends boolean = false>(options: Options<AdminCancelBookingData, ThrowOnError>): RequestResult<AdminCancelBookingResponses, AdminCancelBookingErrors, ThrowOnError> => (options.client ?? client).post<AdminCancelBookingResponses, AdminCancelBookingErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/admin/bookings/{booking_id}/cancel',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Overview
+ */
+export const adminOverview = <ThrowOnError extends boolean = false>(options?: Options<AdminOverviewData, ThrowOnError>): RequestResult<AdminOverviewResponses, AdminOverviewErrors, ThrowOnError> => (options?.client ?? client).get<AdminOverviewResponses, AdminOverviewErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/admin/overview',
+    ...options
+});
+
+/**
+ * Rooms
+ */
+export const adminRooms = <ThrowOnError extends boolean = false>(options?: Options<AdminRoomsData, ThrowOnError>): RequestResult<AdminRoomsResponses, AdminRoomsErrors, ThrowOnError> => (options?.client ?? client).get<AdminRoomsResponses, AdminRoomsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/admin/rooms',
+    ...options
+});
+
+/**
+ * Create Room
+ */
+export const adminCreateRoom = <ThrowOnError extends boolean = false>(options: Options<AdminCreateRoomData, ThrowOnError>): RequestResult<AdminCreateRoomResponses, AdminCreateRoomErrors, ThrowOnError> => (options.client ?? client).post<AdminCreateRoomResponses, AdminCreateRoomErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/admin/rooms',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Room
+ */
+export const adminRoom = <ThrowOnError extends boolean = false>(options: Options<AdminRoomData, ThrowOnError>): RequestResult<AdminRoomResponses, AdminRoomErrors, ThrowOnError> => (options.client ?? client).get<AdminRoomResponses, AdminRoomErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/admin/rooms/{room_id}',
+    ...options
+});
+
+/**
+ * Update Room
+ */
+export const adminUpdateRoom = <ThrowOnError extends boolean = false>(options: Options<AdminUpdateRoomData, ThrowOnError>): RequestResult<AdminUpdateRoomResponses, AdminUpdateRoomErrors, ThrowOnError> => (options.client ?? client).put<AdminUpdateRoomResponses, AdminUpdateRoomErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/admin/rooms/{room_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Impact
+ */
+export const adminRoomImpact = <ThrowOnError extends boolean = false>(options: Options<AdminRoomImpactData, ThrowOnError>): RequestResult<AdminRoomImpactResponses, AdminRoomImpactErrors, ThrowOnError> => (options.client ?? client).post<AdminRoomImpactResponses, AdminRoomImpactErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/admin/rooms/{room_id}/impact',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Schedule
+ */
+export const adminSchedule = <ThrowOnError extends boolean = false>(options: Options<AdminScheduleData, ThrowOnError>): RequestResult<AdminScheduleResponses, AdminScheduleErrors, ThrowOnError> => (options.client ?? client).get<AdminScheduleResponses, AdminScheduleErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/admin/rooms/{room_id}/schedule',
+    ...options
+});
+
+/**
+ * Update Schedule
+ */
+export const adminUpdateSchedule = <ThrowOnError extends boolean = false>(options: Options<AdminUpdateScheduleData, ThrowOnError>): RequestResult<AdminUpdateScheduleResponses, AdminUpdateScheduleErrors, ThrowOnError> => (options.client ?? client).put<AdminUpdateScheduleResponses, AdminUpdateScheduleErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/admin/rooms/{room_id}/schedule',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Users
+ */
+export const adminUsers = <ThrowOnError extends boolean = false>(options?: Options<AdminUsersData, ThrowOnError>): RequestResult<AdminUsersResponses, AdminUsersErrors, ThrowOnError> => (options?.client ?? client).get<AdminUsersResponses, AdminUsersErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/admin/users',
+    ...options
+});
+
+/**
+ * User
+ */
+export const adminUser = <ThrowOnError extends boolean = false>(options: Options<AdminUserData, ThrowOnError>): RequestResult<AdminUserResponses, AdminUserErrors, ThrowOnError> => (options.client ?? client).get<AdminUserResponses, AdminUserErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/admin/users/{user_id}',
+    ...options
+});
+
+/**
+ * Update User
+ */
+export const adminUpdateUser = <ThrowOnError extends boolean = false>(options: Options<AdminUpdateUserData, ThrowOnError>): RequestResult<AdminUpdateUserResponses, AdminUpdateUserErrors, ThrowOnError> => (options.client ?? client).put<AdminUpdateUserResponses, AdminUpdateUserErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-roombook_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/admin/users/{user_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Change Email
@@ -71,6 +290,47 @@ export const logoutCurrentSession = <ThrowOnError extends boolean = false>(optio
         }],
     url: '/api/v1/auth/logout',
     ...options
+});
+
+/**
+ * List Factors
+ */
+export const listMfaFactors = <ThrowOnError extends boolean = false>(options?: Options<ListMfaFactorsData, ThrowOnError>): RequestResult<ListMfaFactorsResponses, ListMfaFactorsErrors, ThrowOnError> => (options?.client ?? client).get<ListMfaFactorsResponses, ListMfaFactorsErrors, ThrowOnError>({ url: '/api/v1/auth/mfa', ...options });
+
+/**
+ * Enroll
+ */
+export const enrollMfaFactor = <ThrowOnError extends boolean = false>(options: Options<EnrollMfaFactorData, ThrowOnError>): RequestResult<EnrollMfaFactorResponses, EnrollMfaFactorErrors, ThrowOnError> => (options.client ?? client).post<EnrollMfaFactorResponses, EnrollMfaFactorErrors, ThrowOnError>({
+    url: '/api/v1/auth/mfa/enroll',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Verify
+ */
+export const verifyMfaFactor = <ThrowOnError extends boolean = false>(options: Options<VerifyMfaFactorData, ThrowOnError>): RequestResult<VerifyMfaFactorResponses, VerifyMfaFactorErrors, ThrowOnError> => (options.client ?? client).post<VerifyMfaFactorResponses, VerifyMfaFactorErrors, ThrowOnError>({
+    url: '/api/v1/auth/mfa/verify',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Remove
+ */
+export const removeMfaFactor = <ThrowOnError extends boolean = false>(options: Options<RemoveMfaFactorData, ThrowOnError>): RequestResult<RemoveMfaFactorResponses, RemoveMfaFactorErrors, ThrowOnError> => (options.client ?? client).post<RemoveMfaFactorResponses, RemoveMfaFactorErrors, ThrowOnError>({
+    url: '/api/v1/auth/mfa/{factor_id}/remove',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

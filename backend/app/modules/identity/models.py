@@ -28,6 +28,9 @@ class ApplicationUser(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     role: Mapped[str] = mapped_column(String(12), nullable=False, server_default="Member")
+    verified_email: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    email_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revision: Mapped[int] = mapped_column(nullable=False, server_default="1")
     is_active: Mapped[bool] = mapped_column(nullable=False, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -83,6 +86,7 @@ class AuthSession(Base):
     refresh_token_ciphertext: Mapped[str] = mapped_column(Text, nullable=False)
     provider_session_id: Mapped[str] = mapped_column(String(36), nullable=False)
     aal: Mapped[str] = mapped_column(String(4), nullable=False, server_default="aal1")
+    mfa_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     purpose: Mapped[str] = mapped_column(String(12), nullable=False, server_default="standard")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

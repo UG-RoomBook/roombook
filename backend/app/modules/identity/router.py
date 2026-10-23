@@ -46,6 +46,7 @@ def current_session(
         aal=aal,
         expires_at=result.expires_at,
         csrf_token=result.csrf_token,
+        mfa_verified_at=result.mfa_verified_at,
     )
 
 

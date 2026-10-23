@@ -38,7 +38,11 @@ class AccountService:
             db.execute(
                 delete(AccountAttempt).where(AccountAttempt.bucket < now - timedelta(hours=1))
             )
-            for kind, value, maximum in [("peer", peer, 50), ("account", account.casefold(), 10)]:
+            peer_limit, account_limit = (200, 100) if action == "admin-write" else (50, 10)
+            for kind, value, maximum in [
+                ("peer", peer, peer_limit),
+                ("account", account.casefold(), account_limit),
+            ]:
                 if exceeded or (kind == "account" and not account):
                     break
                 key = self.sessions.cipher.csrf_token(f"attempt/{action}/{kind}/{value}")

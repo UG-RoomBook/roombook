@@ -14,10 +14,15 @@ export function AccountNavigation() {
   const location = useLocation();
   const previousUser = useRef<string | undefined>(undefined);
   useEffect(() => {
-    const current = session.isError ? undefined : session.data?.user.id;
+    const current =
+      session.isError || !session.data
+        ? undefined
+        : `${session.data.user.id}/${session.data.user.role}/${session.data.aal}`;
     if (previousUser.current && current !== previousUser.current) {
-      const privateQueries = { queryKey: ['bookings'] };
-      void cache.cancelQueries(privateQueries).then(() => cache.removeQueries(privateQueries));
+      for (const root of ['bookings', 'admin']) {
+        const privateQueries = { queryKey: [root] };
+        void cache.cancelQueries(privateQueries).then(() => cache.removeQueries(privateQueries));
+      }
     }
     if (!session.isPending) previousUser.current = current;
   }, [cache, session.data, session.isError, session.isPending]);
@@ -258,6 +263,7 @@ function AccountSummary() {
     <div className="sw-account-panel">
       <p role="status">You are signed in as a {session.data.user.role.toLowerCase()}.</p>
       <Link to="/account/email">Change email address</Link>
+      <Link to="/account/mfa">Manage authenticator</Link>
       {logout.error && <p role="alert">{logout.error.message}</p>}
       <Button disabled={logout.isPending} onClick={() => logout.mutate()}>
         {logout.isPending ? 'Signing out…' : 'Sign out'}
