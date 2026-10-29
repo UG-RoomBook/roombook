@@ -40,7 +40,7 @@ def test_metrics_report_the_running_release(application: FastAPI) -> None:
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/plain")
     assert samples(response.text, "roombook_build_info") == [
-        ({"commit_sha": SHA, "environment": "staging", "version": "0.2.0"}, 1.0)
+        ({"commit_sha": SHA, "environment": "staging", "version": "0.2.1"}, 1.0)
     ]
 
 
