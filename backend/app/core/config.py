@@ -22,7 +22,7 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("ROOMBOOK_DATABASE_URL", "DATABASE_URL"),
     )
     environment: str = "development"
-    version: str = "0.2.0"
+    version: str = "0.2.1"
     commit_sha: str = "unknown"
     # Directory holding the built React app; set in the container image only.
     static_dir: Path | None = None
