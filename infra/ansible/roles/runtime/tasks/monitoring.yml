@@ -43,7 +43,10 @@
     dest: /etc/roombook/alertmanager-discord-url
     owner: root
     group: "{{ roombook_group }}"
-    mode: "0640"
+    # The Alertmanager container runs as an unprivileged user that is not in the
+    # roombook group, so 0640 made every Discord notification fail with
+    # "permission denied". The host is reachable only through Session Manager.
+    mode: "0644"
     # Until the webhook parameter exists, alerts are routed nowhere useful;
     # Alertmanager still loads and the alert rules stay visible in Prometheus.
     content: "{{ runtime_discord_webhook.stdout | trim if runtime_discord_webhook.rc == 0 else 'https://discord.invalid/webhook-not-configured' }}\n"

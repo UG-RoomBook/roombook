@@ -26,7 +26,7 @@ def test_settings_work_without_database_configuration() -> None:
     settings = Settings(database_url=None)
     assert settings.database_url is None
     assert settings.environment == "development"
-    assert settings.version == "0.1.0"
+    assert settings.version == "0.2.0"
     assert settings.commit_sha == "unknown"
 
 
